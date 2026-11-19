@@ -1,0 +1,697 @@
+<title>Квалиметр</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: экзаменационный бланк — лента сверху, лист с заданием, сетка номеров как в бланке ответов */
+:root{
+  --bg:#eef2f3; --paper:#ffffff; --ink:#14212b; --muted:#5b6b76; --line:#d5dee2; --soft:#e7edf0;
+  --accent:#0d6b86; --accent-ink:#ffffff; --accent-soft:#dcedf2;
+  --ok:#1d7a4a; --ok-soft:#dcf1e5; --bad:#b4372f; --bad-soft:#f8e0dd; --warn:#a86a07; --warn-soft:#fbeed2;
+  --f-display:"Unbounded","Segoe UI",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans","Segoe UI",system-ui,-apple-system,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f171c; --paper:#16222a; --ink:#e3ecef; --muted:#93a4ad; --line:#2a3a44; --soft:#1d2c35;
+  --accent:#4fb3d1; --accent-ink:#06222c; --accent-soft:#16384a;
+  --ok:#5ccf8f; --ok-soft:#163a28; --bad:#f08077; --bad-soft:#41201d; --warn:#f0b44c; --warn-soft:#3d2e12; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f171c; --paper:#16222a; --ink:#e3ecef; --muted:#93a4ad; --line:#2a3a44; --soft:#1d2c35;
+  --accent:#4fb3d1; --accent-ink:#06222c; --accent-soft:#16384a;
+  --ok:#5ccf8f; --ok-soft:#163a28; --bad:#f08077; --bad-soft:#41201d; --warn:#f0b44c; --warn-soft:#3d2e12; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{background:var(--bg);color:var(--ink)}
+body{font-family:var(--f-body);font-size:15px;line-height:1.55;margin:0}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--ink)}
+.wrap{max-width:1080px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--f-display);font-weight:700;text-wrap:balance;line-height:1.2;margin:0}
+h1{font-size:clamp(1.5rem,3.6vw,2.2rem)} h2{font-size:1.15rem} h3{font-size:1rem}
+p{margin:0}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.eyebrow{font-size:.72rem;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.muted{color:var(--muted)} .small{font-size:.86rem}
+button{font:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.band{background:var(--ink);color:var(--bg);position:sticky;top:env(safe-area-inset-top,0px);z-index:20}
+.band .wrap{display:flex;align-items:center;gap:16px;min-height:56px;padding-block:6px}
+.brand{font-family:var(--f-display);font-size:1rem;font-weight:700;background:none;border:0;color:inherit;padding:6px 0;display:flex;gap:10px;align-items:center}
+.brand svg{flex:none}
+.band .ctx{margin-left:auto;font-size:.86rem;opacity:.75;text-align:right}
+
+main{padding-block:28px 64px}
+.view{display:grid;gap:22px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.btn{border:1px solid var(--line);background:var(--paper);color:var(--ink);padding:10px 16px;border-radius:8px;font-weight:500}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.ghost{background:none}
+.btn.danger{color:var(--bad);border-color:var(--bad)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.sheet{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:22px}
+.pill{display:inline-flex;align-items:center;font-size:.74rem;font-weight:600;padding:2px 9px;border-radius:999px;white-space:nowrap;background:var(--soft);color:var(--muted)}
+
+/* home */
+.intro{display:grid;gap:10px;max-width:68ch}
+.subjects{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.subj{display:grid;gap:14px;align-content:space-between}
+.subj .top{display:grid;gap:6px}
+.subj .meta{display:flex;gap:16px;flex-wrap:wrap;font-size:.84rem;color:var(--muted)}
+.subj .meta b{color:var(--ink);font-family:var(--f-mono);font-weight:600}
+.subj.mix{grid-column:1/-1;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center}
+.resume{border-color:var(--warn);background:var(--warn-soft)}
+
+/* test */
+.test-head{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.progress{flex:1 1 220px;display:grid;gap:6px}
+.track{height:6px;background:var(--soft);border-radius:3px;overflow:hidden}
+.track i{display:block;height:100%;background:var(--accent)}
+.test-grid{display:grid;grid-template-columns:minmax(0,1fr) 230px;gap:18px;align-items:start}
+.qwrap{display:grid;gap:16px}
+.qwrap.split{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.passage{background:var(--soft);border-radius:var(--r);padding:18px;display:grid;gap:10px;align-content:start;max-height:72vh;overflow:auto}
+.passage p{max-width:65ch}
+.qcard{display:grid;gap:16px;align-content:start}
+.qhead{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.qnum{font-family:var(--f-mono);font-weight:600}
+.qtext{font-size:1.04rem;max-width:70ch;min-width:0}
+.qtext pre{font-family:var(--f-mono);font-size:.85rem;background:var(--soft);padding:10px 12px;border-radius:6px;overflow-x:auto;margin:10px 0}
+.qtext table{border-collapse:collapse;margin:10px 0;font-size:.9rem;font-family:var(--f-mono)}
+.qtext td,.qtext th{border:1px solid var(--line);padding:3px 10px;text-align:left}
+.qtext th{background:var(--soft)}
+.qtext i{color:var(--muted)}
+code{font-family:var(--f-mono);font-size:.88em;background:var(--soft);padding:1px 5px;border-radius:4px}
+.opts{display:grid;gap:8px}
+.opt{display:flex;gap:12px;align-items:flex-start;text-align:left;width:100%;border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:8px;padding:11px 14px}
+.opt:hover{border-color:var(--accent)}
+.opt .mk{flex:none;width:24px;height:24px;display:grid;place-items:center;border:1.5px solid var(--muted);border-radius:50%;font-family:var(--f-mono);font-size:.78rem;font-weight:600;margin-top:1px}
+.opt[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.opt[aria-pressed="true"] .mk{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.opt span:last-child{min-width:0;overflow-wrap:anywhere}
+.qnav{display:flex;gap:8px;justify-content:space-between;flex-wrap:wrap}
+.palette{position:sticky;top:76px;display:grid;gap:12px}
+.pal-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
+.cell{aspect-ratio:1;border:1px solid var(--line);background:var(--paper);color:var(--muted);font-family:var(--f-mono);font-size:.72rem;padding:0;border-radius:4px}
+.cell.ans{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.cell.cur{outline:2px solid var(--ink);outline-offset:1px}
+.kbd{font-size:.76rem;color:var(--muted)}
+
+/* modal */
+.modal{position:fixed;inset:0;background:rgba(10,18,24,.55);display:grid;place-items:center;z-index:50;padding:16px}
+.modal .sheet{max-width:440px;width:100%;display:grid;gap:14px}
+
+/* results */
+.score{display:grid;grid-template-columns:auto minmax(0,1fr);gap:28px;align-items:center}
+.big{font-family:var(--f-mono);font-size:clamp(3rem,9vw,4.6rem);font-weight:600;line-height:1}
+.figures{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.figures>div{background:var(--paper);padding:12px 14px;display:grid;gap:2px}
+.figures .v{font-family:var(--f-mono);font-size:1.4rem;font-weight:600}
+.v.ok{color:var(--ok)} .v.bad{color:var(--bad)}
+.grade{font-weight:600}
+.breakdown{display:grid;gap:10px}
+.brow{display:grid;grid-template-columns:minmax(0,200px) minmax(0,1fr) 70px;gap:12px;align-items:center;font-size:.9rem}
+.bar{height:8px;background:var(--soft);border-radius:4px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent)}
+.wrong-list{display:grid;gap:12px}
+.wi{display:grid;gap:12px;padding:18px}
+.ans-line{display:grid;grid-template-columns:150px minmax(0,1fr);gap:10px;padding:9px 12px;border-radius:8px;align-items:baseline}
+.ans-line.bad{background:var(--bad-soft)} .ans-line.ok{background:var(--ok-soft)}
+.ans-line .lbl{font-size:.74rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.ans-line.bad .lbl{color:var(--bad)} .ans-line.ok .lbl{color:var(--ok)}
+.ans-line span:last-child{min-width:0;overflow-wrap:anywhere}
+.why{font-size:.93rem;border-left:3px solid var(--accent);padding:4px 0 4px 12px}
+details summary{cursor:pointer;color:var(--accent);font-size:.88rem}
+details .passage{margin-top:8px;max-height:none}
+.empty{padding:28px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:var(--r)}
+
+@media (max-width:860px){
+  .subjects{grid-template-columns:1fr}
+  .test-grid{grid-template-columns:1fr}
+  .palette{position:static}
+  .pal-grid{grid-template-columns:repeat(10,minmax(0,1fr))}
+  .qwrap.split{grid-template-columns:1fr}
+  .passage{max-height:none}
+  .score{grid-template-columns:1fr}
+}
+@media (max-width:520px){
+  .sheet{padding:16px}
+  .figures{grid-template-columns:1fr}
+  .brow{grid-template-columns:minmax(0,1fr) 60px}
+  .brow .bar{grid-column:1/-1;grid-row:2}
+  .ans-line{grid-template-columns:1fr;gap:2px}
+  .band .ctx{display:none}
+}
+@media (prefers-reduced-motion:no-preference){.opt,.btn,.cell{transition:border-color .12s,background .12s}}
+</style>
+
+<header class="band"><div class="wrap">
+  <button class="brand" id="brand" aria-label="Квалиметр — на главную"><svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><rect x="1" y="1" width="20" height="20" rx="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M6 15l3-4 3 2 4-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Квалиметр</button>
+  <span class="ctx" id="ctx"></span>
+</div></header>
+<main class="wrap" id="app"></main>
+<div id="modal-root"></div>
+
+<script>
+/* =====================================================================
+   ДАННЫЕ. Формат ручного задания: [сложность h|m, тема, вопрос, [верный, неверный×3], объяснение, текст?]
+   ===================================================================== */
+const PASSAGES = {
+  R1:{title:"Open-source software",text:"Open-source software is software whose source code is made publicly available, allowing anyone to study, modify and distribute it. The idea is older than many people think: in the 1980s, programmers already shared code through academic networks. Today, open-source projects power much of the internet, from web servers to the operating systems on most smartphones.\n\nSupporters argue that open development improves quality, because many independent developers can find and fix errors. Critics, however, point out that popular projects are often maintained by a small number of volunteers who receive little or no payment. When such a maintainer leaves, a library used by thousands of companies may stop receiving security updates.\n\nFor this reason, several large technology firms now pay engineers to work on open-source projects full-time, and some foundations offer grants to independent maintainers."},
+  R2:{title:"Cooling data centres",text:"Data centres consume a significant share of the world's electricity, and their demand is growing as more services move to the cloud and artificial intelligence models become larger. Much of this energy is used not for computing but for cooling, since servers produce heat that must be removed to prevent hardware failures.\n\nEngineers have tried several approaches to reduce this cost. Some companies build data centres in cold climates, where outside air can be used for cooling during most of the year. Others place servers in liquid that absorbs heat far more efficiently than air. A third approach is to reuse the waste heat: in some northern cities, heat from data centres warms residential buildings.\n\nNone of these solutions is perfect. Cold regions may be far from users, which increases delays, and liquid cooling requires expensive equipment."},
+  R3:{title:"Automated hiring",text:"Automated hiring systems promise to make recruitment faster and more objective. Instead of relying on a recruiter's intuition, they rank candidates using models trained on past hiring decisions. Yet this design contains a hidden weakness. If a company historically favoured graduates of a few universities, a model trained on its records will learn the same preference and present it as a neutral, data-driven judgement.\n\nBecause the ranking appears mathematical, managers may question it less than they would question a human recruiter. Some regulators now require companies to audit such systems regularly and to explain how they reach decisions.\n\nCritics of these rules argue that audits are expensive for small firms; supporters reply that the cost of unfair hiring, both to candidates and to companies that miss talented people, is far higher."}
+};
+
+const EN = [
+["h","Grammar","Not until the results were published ___ how serious the error had been.",["did we realise","we realised","had we realise","we did realise"],"После Not until в начале предложения нужна инверсия во второй части: did + подлежащее + глагол."],
+["h","Grammar","Had I known about the deadline, I ___ the report earlier.",["would have submitted","would submit","had submitted","will have submitted"],"Had I known = If I had known: это третий тип условных предложений, поэтому would have + V3."],
+["h","Grammar","She insisted that the contract ___ before the meeting.",["be signed","was signed","is signed","would sign"],"После insist that используется сослагательное наклонение: базовая форма глагола без окончаний (be signed)."],
+["h","Grammar","It's high time the government ___ action on data privacy.",["took","takes","has taken","will take"],"После It's high time нужен Past Simple: так выражают, что действие давно пора было сделать."],
+["h","Grammar","The new framework, ___ was released last month, has already been adopted by many teams.",["which","that","what","who"],"Придаточное выделено запятыми (non-defining), в нём that не употребляется; для предмета — which."],
+["h","Grammar","By this time next year, they ___ the migration to the cloud.",["will have completed","will complete","are completing","would complete"],"By this time next year — действие завершится к моменту в будущем: Future Perfect."],
+["h","Grammar","No sooner ___ the server than it crashed again.",["had they restarted","they had restarted","did they restarted","have they restarted"],"Конструкция No sooner had + подлежащее + V3 … than требует инверсии и Past Perfect."],
+["h","Grammar","I'd rather you ___ my code without asking.",["didn't change","don't change","won't change","not change"],"После would rather + другое лицо используется Past Simple, даже если речь о настоящем."],
+["h","Grammar","Little ___ that the startup would become a global company.",["did they suspect","they suspected","they did suspect","suspected they"],"Little в начале предложения имеет отрицательный смысл и вызывает инверсию с вспомогательным did."],
+["h","Grammar","The bug must ___ during the last update, because everything worked yesterday.",["have been introduced","be introduced","have introduced","being introduced"],"Уверенное предположение о прошлом — must have + V3; ошибку «внесли», поэтому пассив: have been introduced."],
+["h","Grammar","Scarcely had the meeting begun ___ the fire alarm went off.",["when","than","that","then"],"Пара Scarcely/Hardly … when (а than — только после No sooner)."],
+["h","Grammar","Were the company ___ its prices, it would lose customers.",["to raise","raise","raising","raised"],"Were + подлежащее + to-инфинитив — инвертированная форма If the company were to raise."],
+["h","Grammar","If he hadn't missed the flight, he ___ in Berlin now.",["would be","would have been","will be","had been"],"Смешанное условное: условие в прошлом (hadn't missed), результат в настоящем (now) → would be."],
+["h","Grammar","The report ___ by the time the manager arrived.",["had already been finished","has already been finished","was already finishing","already finished"],"Действие завершилось до другого прошлого действия, а отчёт сам себя не пишет: Past Perfect Passive."],
+["h","Grammar","Only after testing every module ___ the product ready for release.",["did they declare","they declared","they did declare","declared they"],"Only after … в начале предложения вызывает инверсию в главной части: did they declare."],
+["h","Grammar","Neither of the proposed solutions ___ acceptable to the client.",["was","were","have been","are being"],"В формальном английском neither of + существительное во мн. ч. согласуется с глаголом в ед. ч."],
+["h","Grammar","The number of applicants ___ increased significantly this year.",["has","have","are","were"],"The number of … — подлежащее «число», единственное число: has."],
+["h","Grammar","A number of students ___ complained about the new schedule.",["have","has","is","was"],"A number of = «многие», глагол во множественном числе: have."],
+["h","Grammar","He denied ___ the confidential files.",["having accessed","to have accessed","to access","access"],"Deny требует герундия; перфектный герундий подчёркивает, что действие было раньше отрицания."],
+["h","Grammar","She is said ___ the algorithm herself years ago.",["to have designed","to design","designing","having designed"],"Is said + перфектный инфинитив, потому что действие (years ago) предшествует моменту речи."],
+["h","Grammar","You needn't ___ a taxi; I could have driven you.",["have taken","take","had taken","taking"],"Needn't have + V3 — действие совершили, но в нём не было необходимости."],
+["h","Grammar","The manager, along with her assistants, ___ attending the conference.",["is","are","were","have been"],"Along with не меняет число подлежащего: подлежащее — the manager (ед. ч.)."],
+["h","Grammar","Suppose the system ___ down during the exam — what would you do?",["went","goes","will go","has gone"],"Suppose + Past Simple описывает воображаемую ситуацию; это подтверждает what would you do."],
+["h","Grammar","I regret ___ you that your application has been rejected.",["to inform","informing","to have informed","inform"],"Regret to inform — официально сообщать о неприятном сейчас; regret informing — сожалеть о сказанном раньше."],
+["h","Grammar","On his way to the office he stopped ___ a coffee.",["to buy","buying","buy","to buying"],"Stop to do — остановиться, чтобы что-то сделать; stop doing — перестать делать."],
+["h","Grammar","So complex ___ that only two students solved it.",["was the problem","the problem was","did the problem","the problem did"],"So + прилагательное в начале предложения вызывает инверсию: So complex was the problem."],
+["h","Grammar","Under no circumstances ___ share your password.",["should you","you should","you shouldn't","shouldn't you"],"Отрицательное обстоятельство в начале требует инверсии; второе отрицание не нужно."],
+["h","Grammar","It was not until 2007 ___ the first iPhone was released.",["that","when","which","since"],"Усилительная конструкция It was not until … that …"],
+["h","Grammar","The more you practise, ___ you become.",["the more confident","more confident","the most confident","the confident"],"Парная конструкция The more …, the more … требует артикля the и сравнительной степени в обеих частях."],
+["h","Grammar","I wish I ___ to the conference last year — it sounded amazing.",["had gone","went","would go","have gone"],"Сожаление о прошлом: wish + Past Perfect."],
+["h","Grammar","I wish you ___ interrupting me while I'm coding!",["would stop","stopped","had stopped","will stop"],"Wish + would выражает раздражение чужим поведением, которое хочется изменить."],
+["h","Grammar","The project, ___ budget was cut twice, was finally cancelled.",["whose","which","of that","its"],"Whose — притяжательное относительное местоимение («бюджет которого»)."],
+["h","Grammar","He is used to ___ late, so the night shift doesn't bother him.",["working","work","have worked","be working"],"Be used to (привык) + герундий; to здесь предлог."],
+["h","Grammar","Rarely ___ such an elegant solution.",["have I seen","I have seen","I saw","did I saw"],"Rarely в начале предложения вызывает инверсию: have I seen."],
+["h","Grammar","It's no use ___ about the bug; let's fix it.",["complaining","to complain","complain","complained"],"It's no use / It's no good + герундий."],
+["h","Grammar","The proposal was rejected on the grounds ___ it was too expensive.",["that","of","which","for"],"Устойчивый союз on the grounds that — «на том основании, что»."],
+["h","Grammar","Should you ___ any problems, contact the administrator.",["encounter","encountered","encountering","to encounter"],"Should + подлежащее + базовая форма = If you encounter (инверсия в условии первого типа)."],
+["h","Grammar","Not only ___ the deadline, but they also exceeded the budget.",["did they miss","they missed","they did miss","missed they"],"Not only в начале предложения требует инверсии: did they miss."],
+["h","Grammar","Choose the grammatically correct sentence.",["Each of the developers has their own laptop.","Each of the developers have their own laptop.","Each developers has his own laptop.","Every of the developers has a laptop."],"Each of + мн. ч. согласуется с глаголом в ед. ч.; every of не употребляется."],
+["h","Grammar","Choose the grammatically correct sentence.",["The fewer bugs we have, the faster we can release.","The less bugs we have, the more faster we can release.","Fewer bugs we have, faster we release.","The fewer bugs we have, the more fast we can release."],"Bugs исчисляемые → fewer; faster уже сравнительная степень, more не добавляется."],
+["h","Grammar","Which sentence contains an error?",["She suggested me to apply for the job.","She suggested that I apply for the job.","She suggested applying for the job.","She suggested that I should apply for the job."],"После suggest не бывает конструкции «объект + to-инфинитив»; остальные три варианта правильные."],
+["h","Grammar","Which sentence contains an error?",["I am knowing the answer.","I know the answer.","I have known him for years.","I am thinking about the answer."],"Know — глагол состояния и в Continuous не употребляется; think в значении «обдумывать» — может."],
+["h","Grammar","«Have you finished the tests?» she asked. → Reported speech:",["She asked if I had finished the tests.","She asked had I finished the tests.","She asked if I have finished the tests?","She asked did I finish the tests."],"В косвенном вопросе прямой порядок слов, сдвиг времени (Present Perfect → Past Perfect), без вопросительного знака."],
+["h","Grammar","If only I ___ more attention in class yesterday.",["had paid","paid","would pay","have paid"],"If only + Past Perfect — сожаление о прошлом (yesterday)."],
+["h","Grammar","This is the first time I ___ a marathon.",["have run","run","am running","ran"],"После This is the first time используется Present Perfect."],
+["h","Grammar","He talks as if he ___ the boss, but he's only an intern.",["were","is being","has been","will be"],"As if + were — нереальное сравнение (на самом деле он не начальник)."],
+["h","Grammar","Not a single error ___ found during the audit.",["was","were","did","has"],"Not a single error — ед. ч.; ошибку «нашли» → пассив was found."],
+["h","Grammar","The meeting is due ___ at 9 a.m.",["to start","starting","start","to starting"],"Be due + to-инфинитив — «должно состояться по плану»."],
+["h","Grammar","She is accused ___ leaking data ___ a competitor.",["of / to","for / to","of / for","with / at"],"Accuse someone of something; leak something to someone."],
+["h","Vocabulary","The researchers tried to ___ the risks of the new treatment by running more trials.",["mitigate","aggravate","militate","instigate"],"Mitigate — смягчать, уменьшать; aggravate — усугублять."],
+["h","Vocabulary","The evidence was ___: it could be interpreted in two different ways.",["ambiguous","unanimous","conspicuous","meticulous"],"Ambiguous — допускающий два толкования, что и описано после двоеточия."],
+["h","Vocabulary","Smartphones have become ubiquitous. «Ubiquitous» means…",["found everywhere","extremely expensive","rarely used","technically complex"],"Ubiquitous — вездесущий, встречающийся повсюду."],
+["h","Vocabulary","To «scrutinise» a document means to…",["examine it very carefully","sign it officially","copy it quickly","ignore it"],"Scrutinise — тщательно изучать, проверять."],
+["h","Vocabulary","The company's success was ___ to its strong engineering culture.",["attributable","contributable","distributable","accountable"],"Attributable to — «объясняемый чем-то»; contributable в таком значении не используется."],
+["h","Vocabulary","Despite numerous setbacks, she remained ___ and finished the project.",["resilient","reluctant","redundant","resentful"],"Resilient — стойкий, быстро восстанавливающийся; подходит к despite setbacks."],
+["h","Vocabulary","The new policy had a ___ effect on productivity: it fell by 30%.",["detrimental","beneficial","negligible","marginal"],"Падение на 30% — значительный вред: detrimental."],
+["h","Vocabulary","«Feasible» is closest in meaning to…",["achievable","desirable","profitable","visible"],"Feasible — осуществимый, выполнимый."],
+["h","Vocabulary","The two studies reached ___ conclusions, so further research is needed.",["conflicting","consistent","coherent","conclusive"],"Нужно больше исследований, потому что выводы противоречат друг другу."],
+["h","Vocabulary","Half the team was ill, so the manager decided to ___ the meeting.",["call off","call on","call up","call for"],"Call off — отменить."],
+["h","Vocabulary","We need to ___ the root cause before releasing a fix.",["pin down","pin up","pin on","pin back"],"Pin down — точно установить, определить."],
+["h","Vocabulary","The phrase «to cut corners» means…",["to do something cheaply or carelessly to save time or money","to take a shorter route","to reduce the number of staff","to change a design"],"Cut corners — экономить время или деньги в ущерб качеству."],
+["h","Vocabulary","The idiom «a blessing in disguise» means…",["something that seems bad but turns out to be good","a hidden danger","an unexpected gift","a secret plan"],"Неудача, которая в итоге оказалась к лучшему."],
+["h","Vocabulary","«To play devil's advocate» means…",["to argue the opposite view to test an argument","to behave badly on purpose","to defend a guilty person in court","to support the majority opinion"],"Намеренно занимать противоположную позицию, чтобы проверить аргументы."],
+["h","Vocabulary","The results are not ___; we need a larger sample.",["conclusive","inclusive","exclusive","conducive"],"Conclusive — окончательный, позволяющий сделать вывод."],
+["h","Vocabulary","The CEO's speech was so ___ that nobody understood the actual plan.",["vague","concise","explicit","lucid"],"Vague — расплывчатый; остальные слова означают ясность."],
+["h","Vocabulary","Choose the correct collocation: «to ___ a conclusion».",["draw","pull","make up","take"],"Draw (или reach) a conclusion — сделать вывод."],
+["h","Vocabulary","«Inevitable» means…",["certain to happen","impossible to predict","easy to avoid","unlikely"],"Inevitable — неизбежный."],
+["h","Vocabulary","The government introduced measures to ___ unemployment.",["curb","curve","curl","curd"],"Curb — сдерживать, ограничивать; остальные слова похожи по написанию."],
+["h","Vocabulary","The term «trade-off» refers to…",["a balance between two desirable but incompatible things","a business agreement between companies","an exchange of goods","a financial loss"],"Trade-off — компромисс: выигрыш в одном ценой потери в другом."],
+["h","Vocabulary","«Cumbersome» is closest in meaning to…",["awkward and difficult to handle","light and convenient","cheap","modern"],"Cumbersome — громоздкий, неудобный."],
+["h","Vocabulary","His explanation was so ___ that even beginners understood it.",["lucid","obscure","convoluted","verbose"],"Lucid — ясный, понятный; остальные слова означают обратное."],
+["h","Vocabulary","The software update rendered the old plugins ___.",["obsolete","obstinate","oblique","obvious"],"Obsolete — устаревший, вышедший из употребления."],
+["h","Vocabulary","«To undermine» someone's authority means to…",["gradually weaken it","officially confirm it","openly praise it","transfer it"],"Undermine — подрывать, постепенно ослаблять."],
+["h","Vocabulary","The two departments ___ their efforts to finish the project faster.",["pooled","pulled","polled","poled"],"Pool efforts/resources — объединять усилия."],
+["m","Grammar","She used to ___ in a bank before she became a developer.",["work","working","worked","have worked"],"Used to + базовая форма — регулярное действие или состояние в прошлом."],
+["m","Vocabulary","In «I can hardly see the screen», «hardly» means…",["almost not","very well","with effort only","recently"],"Hardly — едва, почти не."],
+["m","Grammar","She has been working here ___ five years.",["for","since","during","from"],"For + период времени с Present Perfect Continuous."],
+["m","Grammar","The report ___ yet.",["hasn't been written","wasn't written","hasn't written","didn't write"],"Yet → Present Perfect; отчёт пишут, поэтому пассив."],
+["m","Grammar","If it rains tomorrow, we ___ the event indoors.",["will hold","would hold","would have held","held"],"Реальное условие о будущем: If + Present Simple, will + V."],
+["m","Grammar","He asked me where ___.",["I lived","did I live","do I live","I do live"],"В косвенном вопросе прямой порядок слов и сдвиг времени."],
+["m","Grammar","The film was ___ boring that we left early.",["so","such","too","very"],"So + прилагательное + that; such ставится перед существительным."],
+["m","Grammar","It was ___ interesting lecture that time flew.",["such an","so","such","so an"],"Such + a/an + прилагательное + существительное."],
+["m","Vocabulary","Which word is a synonym of «obtain»?",["acquire","lose","offer","ignore"],"Obtain = acquire — получать, приобретать."],
+["m","Vocabulary","Which word is the opposite of «expand»?",["contract","extend","enlarge","spread"],"Expand (расширяться) ↔ contract (сжиматься)."],
+["m","Vocabulary","«To postpone» means…",["to delay to a later time","to cancel forever","to bring forward","to finish early"],"Postpone — откладывать на более позднее время."],
+["m","Grammar","She ___ to the office when she remembered her laptop.",["was driving","drove","has driven","drives"],"Длительное действие в прошлом, прерванное другим: Past Continuous."],
+["m","Grammar","My laptop needs ___.",["repairing","to repair","repaired","being repair"],"Need + герундий имеет пассивный смысл: «нуждается в ремонте»."],
+["m","Grammar","We had our code ___ by an external auditor.",["reviewed","review","to review","reviewing"],"Каузатив have something done: have + объект + V3."],
+["m","Grammar","You ___ smoke here — it's forbidden.",["mustn't","needn't","don't have to","wouldn't"],"Mustn't — запрет; don't have to и needn't — отсутствие необходимости."],
+["m","Grammar","There's ___ milk left; we need to buy some.",["little","few","a few","many"],"Milk неисчисляемое; little — «мало, почти нет»."],
+["m","Grammar","I look forward to ___ your feedback.",["receiving","receive","received","be receiving"],"Look forward to + герундий: to здесь предлог."],
+["h","Reading","What is the main idea of the passage?",["It describes the benefits and a key risk of open source and how the industry responds","It argues that open-source software is free of errors","It claims open source appeared only recently","It recommends that volunteers stop maintaining libraries"],"Структура текста: идея → преимущество → риск → ответ компаний и фондов. Другие варианты либо противоречат тексту, либо касаются одной детали.","R1"],
+["m","Reading","According to the passage, in the 1980s programmers shared code through…",["academic networks","smartphones","foundations","web servers"],"Прямо сказано: shared code through academic networks.","R1"],
+["h","Reading","What can be inferred from the passage?",["A lack of funding for maintainers can create security risks","Large firms oppose open-source development","All smartphones run open-source applications","Grants are given only to large companies"],"Если неоплачиваемый мейнтейнер уходит, библиотека перестаёт получать обновления безопасности.","R1"],
+["h","Reading","The word «maintained» in paragraph 2 is closest in meaning to…",["kept working and updated","sold","invented","criticised"],"Maintain a project — поддерживать и сопровождать его.","R1"],
+["h","Reading","«For this reason» at the start of paragraph 3 refers to…",["the risk that libraries stop receiving security updates when maintainers leave","the popularity of open source","the age of the open-source idea","the operating systems on smartphones"],"Фраза относится к последней мысли перед ней — риску потери обновлений безопасности.","R1"],
+["m","Reading","According to the passage, much of a data centre's energy is used for…",["cooling","computing","lighting","networking"],"Сказано: used not for computing but for cooling.","R2"],
+["h","Reading","Why are some data centres built in cold climates?",["Outside air can be used for cooling","Land is cheaper there","Most users live there","Liquid cooling is cheaper there"],"Where outside air can be used for cooling during most of the year.","R2"],
+["h","Reading","Which approach is NOT mentioned in the passage?",["Powering servers with solar panels","Building data centres in cold climates","Placing servers in liquid","Reusing waste heat for buildings"],"Солнечные панели в тексте не упоминаются; три остальных подхода описаны.","R2"],
+["h","Reading","Which disadvantage of cold regions does the author mention?",["They may be far from users, which increases delays","They require expensive equipment","They lack electricity","Their weather damages servers"],"Дорогое оборудование относится к жидкостному охлаждению, а не к холодным регионам.","R2"],
+["h","Reading","The author's attitude to the cooling solutions can best be described as…",["balanced: useful but each has limitations","enthusiastic","completely negative","indifferent"],"Автор описывает преимущества и заключает: None of these solutions is perfect.","R2"],
+["h","Reading","According to the passage, the main weakness of automated hiring systems is that they…",["may reproduce biases present in past decisions","are slower than human recruiters","cannot rank candidates","are too expensive to build"],"Модель, обученная на прошлых решениях, перенимает прежние предпочтения.","R3"],
+["h","Reading","Why might managers question automated rankings less than human judgements?",["The rankings appear mathematical and objective","Regulators approve every ranking","The rankings are always correct","Recruiters designed the models"],"Because the ranking appears mathematical, managers may question it less.","R3"],
+["h","Reading","The word «neutral» in paragraph 1 is closest in meaning to…",["impartial","negative","temporary","complex"],"Neutral judgement — беспристрастное суждение.","R3"],
+["h","Reading","Supporters of regulation believe that…",["the cost of unfair hiring exceeds the cost of audits","audits should be banned for small firms","automated hiring should be abolished","recruiters are more biased than models"],"Supporters reply that the cost of unfair hiring … is far higher.","R3"],
+["h","Reading","Which statement would the author most likely agree with?",["Data-driven tools are not automatically fair","Algorithms are always more objective than humans","Small firms should not use any hiring tools","Regulation always makes hiring slower"],"Весь текст показывает, что «математичность» не гарантирует справедливости.","R3"]
+];
+
+const AN = [
+["h","Логические выводы","Если идёт дождь, матч отменяют. Матч отменили. Какой вывод следует обязательно?",["Ни один из этих выводов не следует обязательно","Шёл дождь","Дождя не было","Матч перенесут на завтра"],"Из «A → B» и «B» нельзя вывести A (ошибка утверждения следствия): матч могли отменить по другой причине."],
+["h","Логические выводы","Все A являются B. Ни одно B не является C. Что следует обязательно?",["Ни одно A не является C","Некоторые C являются A","Все C являются B","Некоторые B являются C"],"A целиком внутри B, а B не пересекается с C, значит, A тоже не пересекается с C."],
+["h","Логические выводы","Некоторые инженеры — аналитики. Все аналитики знают SQL. Что следует обязательно?",["Некоторые инженеры знают SQL","Все инженеры знают SQL","Все, кто знает SQL, — аналитики","Некоторые аналитики не являются инженерами"],"Инженеры-аналитики входят во множество знающих SQL. Остальные выводы требуют лишних допущений."],
+["h","Логические выводы","Какое утверждение является отрицанием фразы «Каждый студент решил хотя бы одну задачу»?",["Есть студент, который не решил ни одной задачи","Каждый студент не решил ни одной задачи","Есть студент, решивший все задачи","Ни один студент не решил все задачи"],"¬(∀x ∃y P) ≡ ∃x ∀y ¬P: найдётся студент, у которого нет ни одной решённой задачи."],
+["h","Логические выводы","Какое утверждение равносильно фразе «Если программа компилируется, то в ней нет синтаксических ошибок»?",["Если в программе есть синтаксические ошибки, она не компилируется","Если в программе нет синтаксических ошибок, она компилируется","Если программа не компилируется, в ней есть синтаксические ошибки","Программа компилируется тогда и только тогда, когда в ней нет ошибок"],"Равносильна только контрапозиция: (A → B) ≡ (¬B → ¬A). Обращение и инверсия — другие утверждения."],
+["h","Логические задачи","A говорит: «B лжёт». B говорит: «C лжёт». C говорит: «A и B оба лгут». Кто говорит правду?",["Только B","Только A","Только C","A и C"],"Если B честен, то C лжёт, а значит, неверно, что A и B оба лгут, и A лжёт. Противоречий нет. Остальные варианты к противоречию приводят."],
+["h","Логические задачи","На острове рыцари всегда говорят правду, а лжецы всегда лгут. Житель A сказал о себе и жителе B: «Мы оба лжецы». Кто они?",["A — лжец, B — рыцарь","A — рыцарь, B — лжец","Оба лжецы","Оба рыцари"],"Рыцарь не может назвать себя лжецом, значит, A — лжец, и его фраза ложна. Тогда они не оба лжецы, и B — рыцарь."],
+["h","Логические задачи","Пять студентов (А, Б, В, Г, Д) заняли места с 1 по 5. Б выше В, но ниже Д. А — последний. Г финишировал сразу после Д. Кто на 3-м месте?",["Б","Г","В","Д"],"А на 5-м месте. Порядок Д → Б → В, а Г стоит сразу за Д: Д(1), Г(2), Б(3), В(4)."],
+["h","Анализ аргументов","«После открытия новой библиотеки оценки студентов выросли. Значит, причина — библиотека». Что сильнее всего ослабляет этот вывод?",["В тот же период университет ввёл бесплатные консультации для всех студентов","Библиотека работает допоздна","Студентам нравится новая библиотека","В библиотеке много книг по программированию"],"Альтернативная причина того же эффекта в тот же период подрывает причинный вывод."],
+["h","Анализ аргументов","«В городах, где больше кофеен, выше доходы жителей. Значит, открытие кофеен повышает доходы». Какая ошибка в рассуждении?",["Корреляция принята за причинно-следственную связь","Слишком маленькая выборка","Подмена тезиса","Круговое рассуждение"],"Скорее высокие доходы привлекают кофейни, а не наоборот. Совместное изменение ещё не доказывает причинность."],
+["h","Анализ аргументов","«Наш сервис быстрее конкурента: средняя задержка у нас 80 мс, у конкурента 120 мс». Какое допущение необходимо для этого вывода?",["Задержки измерены в сопоставимых условиях","Конкурент использует другой язык программирования","У нас больше пользователей","Задержка ниже 100 мс считается хорошей"],"Если условия измерения различались (сеть, нагрузка), сравнение теряет смысл. Без этого допущения вывод разваливается."],
+["h","Анализ аргументов","Что сильнее всего усиливает вывод «Новая система подсказок снизила число ошибок у студентов»?",["В контрольной группе без подсказок число ошибок за тот же период не изменилось","Студентам понравилась система","Систему разработали опытные программисты","Ошибок стало меньше у тех, кто и раньше ошибался редко"],"Контрольная группа исключает другие причины снижения ошибок."],
+["h","Анализ аргументов","«Онлайн-курсы дешевле и доступнее, но без самодисциплины их часто бросают. Поэтому тем, кто плохо планирует время, лучше выбирать курсы с дедлайнами». Какой вывод главный?",["Тем, кто плохо планирует время, лучше выбирать курсы с дедлайнами","Онлайн-курсы дешевле очных","Онлайн-курсы часто бросают","Онлайн-курсы хуже очных"],"Главный вывод вводится словом «поэтому», остальное — посылки."],
+["h","Логические выводы","Все участники, набравшие больше 80 баллов, получили диплом. Айгерим получила диплом. Что можно утверждать?",["Нельзя определить, набрала ли она больше 80 баллов","Айгерим набрала больше 80 баллов","Айгерим набрала меньше 80 баллов","Айгерим не участвовала в олимпиаде"],"Условие задаёт достаточный признак, но не единственный: диплом могли дать и по другой причине."],
+["h","Логические выводы","Какое рассуждение построено так же, как «Все металлы проводят ток. Медь — металл. Значит, медь проводит ток»?",["Все птицы имеют перья. Воробей — птица. Значит, у воробья есть перья","Все кошки — млекопитающие. Собака — млекопитающее. Значит, собака — кошка","Некоторые студенты — спортсмены. Асан — студент. Значит, Асан — спортсмен","Если идёт дождь, улица мокрая. Улица мокрая. Значит, шёл дождь"],"Та же правильная схема: все X — Y; a — X; значит, a — Y. Остальные варианты содержат логические ошибки."],
+["h","Анализ аргументов","«Либо мы внедрим ИИ во все процессы, либо компания обанкротится». Какая это ошибка?",["Ложная дилемма","Аргумент к личности","Скользкий склон","Апелляция к авторитету"],"Из многих вариантов искусственно оставлены только два крайних."],
+["h","Анализ аргументов","«Профессор неправ насчёт алгоритма: он даже одеваться не умеет». Какой это приём?",["Аргумент к личности (ad hominem)","Ложная дилемма","Поспешное обобщение","Подмена тезиса"],"Вместо аргумента о сути критикуется человек."],
+["h","Анализ аргументов","«Разрешим телефоны на лекциях — студенты перестанут учиться, и университет потеряет аккредитацию». Какая это ошибка?",["Скользкий склон","Ложная аналогия","Круговое рассуждение","Апелляция к большинству"],"Цепочка всё более тяжёлых последствий без доказательства каждого шага."],
+["h","Анализ аргументов","«Эта книга правдива, потому что в ней написано, что она правдива». Какая это ошибка?",["Круговое рассуждение","Ложная дилемма","Аргумент к личности","Скользкий склон"],"Вывод уже содержится в посылке."],
+["h","Пространственное мышление","Куб 4×4×4 окрасили снаружи и распилили на 64 одинаковых кубика. Сколько кубиков не окрашено вовсе?",["8","27","16","24"],"Неокрашенные кубики образуют внутренний куб (4 − 2)³ = 2³ = 8."],
+["h","Пространственное мышление","Куб 4×4×4 окрасили снаружи и распилили на 64 кубика. У скольких кубиков окрашена ровно одна грань?",["24","36","16","8"],"На каждой из 6 граней внутренний квадрат 2×2: 6 · 4 = 24."],
+["h","Пространственное мышление","Куб 3×3×3 окрасили снаружи и распилили на 27 кубиков. У скольких окрашены ровно две грани?",["12","8","6","24"],"По одному кубику в середине каждого из 12 рёбер; угловые (их 8) окрашены с трёх сторон."],
+["h","Вероятность","В коробке 3 красных и 2 синих шара. Вынимают 2 шара без возвращения. Какова вероятность, что оба красные?",["3/10","9/25","2/5","3/5"],"3/5 · 2/4 = 6/20 = 3/10. Вариант 9/25 был бы верен для выбора с возвращением."],
+["h","Комбинаторика","Сколько различных слов (не обязательно осмысленных) можно составить, переставляя буквы слова «ДАТА»?",["12","24","6","4"],"4! / 2! = 12: буква А повторяется дважды, перестановки двух А между собой ничего не меняют."],
+["h","Текстовые задачи","5 станков за 5 минут изготавливают 5 деталей. За сколько минут 100 станков изготовят 100 деталей?",["5","100","20","1"],"Один станок делает одну деталь за 5 минут. 100 станков работают параллельно: тоже 5 минут."],
+["h","Текстовые задачи","Часы отстают на 3 минуты в час. Их точно выставили в 12:00. Что они покажут, когда точное время будет 20:00?",["19:36","19:24","20:24","19:57"],"За 8 часов отставание 8 · 3 = 24 минуты: 20:00 − 0:24 = 19:36."],
+["h","Логические выводы","«Все отличники сдали экзамен». «Марат не сдал экзамен». Что следует?",["Марат не отличник","Марат отличник","Марат не готовился","Ничего не следует"],"Modus tollens: если бы Марат был отличником, он сдал бы экзамен."],
+["h","Комбинаторика","Сколько раз цифра 7 встречается при записи всех чисел от 1 до 100?",["20","19","11","10"],"10 раз в разряде единиц (7, 17, …, 97) и 10 раз в разряде десятков (70–79). В числе 77 семёрка считается дважды."],
+["m","Логические задачи","Болат, Асель и Дана сидят в ряд. Болат сидит левее Асель. Дана сидит не рядом с Болатом. Кто сидит посередине?",["Асель","Болат","Дана","Определить нельзя"],"Дана не рядом с Болатом, значит, они по краям. Болат левее Асель, поэтому Болат слева, Асель в центре."],
+["m","Классификация","Какое слово лишнее?",["Linux","Python","Java","C++"],"Linux — операционная система, остальные — языки программирования."],
+["m","Анализ аргументов","Какое утверждение является фактом, а не мнением?",["Первая версия Python вышла в 1991 году","Python — лучший язык для начинающих","Java слишком многословна","Программирование — самая интересная профессия"],"Дату выпуска можно проверить; остальные утверждения — оценки."],
+["m","Аналогии","Компилятор : программный код = переводчик : …",["текст","словарь","язык","автор"],"Оба преобразуют исходный материал из одной формы в другую."],
+["m","Вероятность","Бросают две монеты. Какова вероятность, что выпадет хотя бы один орёл?",["3/4","1/2","1/4","2/3"],"1 − P(две решки) = 1 − 1/4 = 3/4."],
+["m","Логические выводы","Все розы — цветы. Некоторые цветы быстро вянут. Следует ли отсюда, что некоторые розы быстро вянут?",["Нет, не следует","Да, следует","Да, все розы быстро вянут","Нет, розы никогда не вянут"],"Быстро вянущие цветы могут вообще не пересекаться с розами."],
+["m","Проценты","Сколько процентов составляет 45 от 180?",["25%","45%","40%","20%"],"45 / 180 = 0,25 = 25%."],
+["m","Аналогии","Врач : больница = учитель : …",["школа","ученик","урок","учебник"],"Пара «специалист : место работы»."],
+["m","Числовые ряды","Продолжите ряд: 1, 4, 9, 16, 25, …",["36","30","35","49"],"Квадраты натуральных чисел: 6² = 36."],
+["m","Текстовые задачи","3 разработчика закрывают 12 задач за 4 дня. За сколько дней 6 разработчиков закроют 24 задачи при той же производительности?",["4","2","8","6"],"Один разработчик закрывает 1 задачу в день, шестеро — 6 в день. 24 / 6 = 4."]
+];
+
+const ALGO = [
+["h","Сортировки","Быстрая сортировка с выбором последнего элемента в качестве опорного получает на вход уже отсортированный массив. Какова сложность?",["O(n²)","O(n log n)","O(n)","O(log n)"],"Опорный элемент каждый раз оказывается максимальным, разбиение вырождается в n − 1 и 0 элементов: n + (n − 1) + … = O(n²)."],
+["h","Сортировки","Какая из сортировок устойчива (stable) в стандартной реализации?",["Сортировка слиянием","Быстрая сортировка","Пирамидальная сортировка","Сортировка выбором"],"Слияние при равных ключах берёт элемент из левой половины первым и сохраняет исходный порядок. Остальные три сортировки переставляют равные элементы."],
+["h","Сортировки","Какова нижняя оценка числа сравнений для любой сортировки, основанной на сравнениях?",["Ω(n log n)","Ω(n)","Ω(n²)","Ω(log n)"],"Дерево решений должно различать n! перестановок, его высота не меньше log₂(n!) = Θ(n log n)."],
+["h","Сортировки","У какой сортировки лучший случай (уже отсортированный массив) выполняется за O(n)?",["Сортировка вставками","Сортировка выбором","Пирамидальная сортировка","Сортировка слиянием"],"Вставками на отсортированном входе делает одно сравнение на элемент. Выбор всегда ищет минимум за O(n) на каждом шаге."],
+["h","Кучи","Какова сложность построения двоичной кучи из n элементов методом просеивания снизу вверх (heapify)?",["O(n)","O(n log n)","O(log n)","O(n²)"],"Большинство узлов находится внизу и просеивается на малую глубину: Σ (n / 2^(h+1)) · h = O(n)."],
+["h","Массивы","Какова амортизированная стоимость добавления элемента в конец динамического массива, если при заполнении ёмкость удваивается?",["O(1)","O(log n)","O(n)","O(n log n)"],"Копирования при удвоениях в сумме дают 1 + 2 + 4 + … < 2n операций на n вставок, то есть O(1) в среднем на одну."],
+["h","Хеширование","Какова сложность поиска в хеш-таблице в худшем случае?",["O(n)","O(1)","O(log n)","O(n log n)"],"Если все ключи попали в одну корзину, поиск вырождается в линейный просмотр. O(1) — это средний случай."],
+["h","Хеширование","Что верно для коэффициента заполнения α хеш-таблицы с открытой адресацией?",["α не может превышать 1","α может быть любым положительным числом","α всегда равен 0,5","α должен быть больше 1"],"При открытой адресации каждый элемент занимает отдельную ячейку, элементов не может быть больше ячеек."],
+["h","Графы","Какова сложность алгоритма Дейкстры с двоичной кучей?",["O((V + E) log V)","O(V²)","O(VE)","O(V + E)"],"Каждая вершина извлекается из кучи и каждое ребро может вызвать уменьшение ключа; обе операции стоят O(log V)."],
+["h","Графы","Что умеет алгоритм Беллмана — Форда, в отличие от алгоритма Дейкстры?",["Работать с отрицательными весами и обнаруживать отрицательные циклы","Работать быстрее на любых графах","Находить минимальное остовное дерево","Работать только с невзвешенными графами"],"Беллман — Форд за O(VE) выполняет V − 1 релаксаций всех рёбер; если V-я итерация что-то улучшает, найден отрицательный цикл."],
+["h","Графы","Какова сложность алгоритма Флойда — Уоршелла?",["O(V³)","O(V² log V)","O(VE)","O(E log V)"],"Три вложенных цикла по промежуточной, начальной и конечной вершинам."],
+["h","Графы","Какая структура данных обеспечивает эффективность алгоритма Краскала?",["Система непересекающихся множеств (DSU)","Стек","Очередь с приоритетом по вершинам","Префиксное дерево"],"Перед добавлением ребра нужно быстро проверить, лежат ли его концы в разных компонентах, — это операции find/union."],
+["h","Графы","Когда у ориентированного графа существует топологическая сортировка?",["Тогда и только тогда, когда в нём нет циклов","Когда он сильно связен","Когда все веса положительны","Всегда"],"Цикл означает, что вершина должна идти раньше самой себя. Без циклов (DAG) порядок всегда существует."],
+["h","Графы","Сколько рёбер в полном неориентированном графе на n вершинах?",["n(n − 1) / 2","n²","n − 1","2n"],"Каждая из n вершин соединена с n − 1 другими; каждое ребро посчитано дважды."],
+["h","Графы","Когда граф является двудольным?",["Тогда и только тогда, когда в нём нет циклов нечётной длины","Когда он является деревом","Когда в нём чётное число вершин","Когда в нём нет циклов"],"Нечётный цикл нельзя раскрасить в два цвета. Деревья двудольны, но двудольный граф может содержать чётные циклы."],
+["h","Графы","За какое время можно найти компоненты сильной связности ориентированного графа?",["O(V + E) — алгоритмами Тарьяна или Косарайю","O(V²) — только матрицей смежности","O(VE) — алгоритмом Беллмана — Форда","O(V³) — алгоритмом Флойда"],"Оба алгоритма основаны на обходе в глубину и линейны по размеру графа."],
+["h","Деревья","Как удаляют узел с двумя детьми из двоичного дерева поиска?",["Заменяют его ключ на минимальный ключ правого поддерева и удаляют тот узел","Удаляют узел вместе с поддеревьями","Заменяют его на любой лист","Поднимают левого ребёнка, а правое поддерево удаляют"],"Преемник (минимум справа) больше всех ключей слева и меньше остальных справа, поэтому свойство BST сохраняется."],
+["h","Деревья","Какое свойство гарантирует красно-чёрное дерево?",["Самый длинный путь от корня до листа не более чем вдвое длиннее самого короткого","Все листья находятся на одной глубине","Высоты поддеревьев отличаются не более чем на 1","Каждый узел имеет ровно двух детей"],"Одинаковое число чёрных узлов на всех путях и отсутствие двух красных подряд дают высоту ≤ 2·log₂(n + 1)."],
+["h","Деревья","Сколько листьев у полного двоичного дерева (каждый узел имеет 0 или 2 детей), если внутренних узлов n?",["n + 1","n","2n","n − 1"],"Каждый внутренний узел добавляет 2 ребра. Всего рёбер 2n = (узлов − 1), значит, узлов 2n + 1 и листьев n + 1."],
+["h","Деревья","Каково максимальное число узлов двоичного дерева высоты h (высота корня = 0)?",["2^(h+1) − 1","2^h","2h + 1","h²"],"На уровне i не больше 2^i узлов: 1 + 2 + … + 2^h = 2^(h+1) − 1."],
+["h","Рекуррентные соотношения","Каково решение рекуррентного соотношения T(n) = T(n − 1) + n?",["Θ(n²)","Θ(n log n)","Θ(n)","Θ(2ⁿ)"],"n + (n − 1) + … + 1 = n(n + 1)/2."],
+["h","Рекуррентные соотношения","Каково решение рекуррентного соотношения T(n) = 2T(n − 1) + 1?",["Θ(2ⁿ)","Θ(n²)","Θ(n log n)","Θ(n)"],"Число вызовов удваивается на каждом уровне: 1 + 2 + 4 + … + 2ⁿ⁻¹ = 2ⁿ − 1 (как в «Ханойских башнях»)."],
+["h","Динамическое программирование","Какие два свойства задачи делают применимым динамическое программирование?",["Оптимальная подструктура и перекрывающиеся подзадачи","Жадный выбор и сортируемость","Рекурсивность и отсутствие подзадач","Линейность и монотонность"],"Оптимум складывается из оптимумов подзадач, а одни и те же подзадачи встречаются многократно, поэтому их результаты стоит запоминать."],
+["h","Жадные алгоритмы","Как жадно выбрать максимальное число непересекающихся интервалов (задача о заявках)?",["Сортировать по времени окончания и брать первый совместимый","Сортировать по времени начала","Брать самые короткие интервалы","Брать интервалы с наименьшим числом пересечений"],"Раннее окончание оставляет максимум места для остальных; это доказывается заменой. Выбор по началу или длине даёт контрпримеры."],
+["h","Динамическое программирование","Какова сложность классического решения задачи о рюкзаке 0/1 методом ДП (n предметов, вместимость W)?",["O(nW) — псевдополиномиальная","O(n log n)","O(2ⁿ)","O(n²)"],"Таблица n × W. Время полиномиально от значения W, но не от длины его записи, поэтому задача остаётся NP-трудной."],
+["h","Сложность","Какая из задач NP-полная?",["3-SAT","Поиск кратчайшего пути в графе с неотрицательными весами","Построение минимального остовного дерева","Сортировка массива"],"3-SAT — классическая NP-полная задача (теорема Кука — Левина). Остальные решаются за полиномиальное время."],
+["h","Структуры данных","Какая комбинация структур реализует LRU-кэш с операциями get и put за O(1)?",["Хеш-таблица и двусвязный список","Двоичное дерево поиска","Стек и очередь","Отсортированный массив"],"Хеш-таблица находит узел за O(1), двусвязный список позволяет за O(1) перенести его в начало и удалить самый старый с конца."],
+["h","Кучи","Как поддерживать медиану потока чисел, чтобы вставка стоила O(log n), а получение медианы — O(1)?",["Две кучи: max-куча для меньшей половины и min-куча для большей","Один отсортированный массив","Хеш-таблица","Очередь"],"Кучи балансируются по размеру, медиана лежит на вершине одной из них."],
+["h","Строки","Какова сложность поиска слова длины L в префиксном дереве (trie)?",["O(L)","O(log n)","O(n)","O(L · n)"],"Спуск идёт по одному символу и не зависит от числа хранимых слов."],
+["h","Поиск","Почему бинарный поиск неэффективен на связном списке?",["Нет доступа к середине за O(1), поиск середины стоит O(n)","Связный список нельзя отсортировать","Бинарный поиск работает только с числами","Связный список не хранит порядок элементов"],"Бинарному поиску нужен произвольный доступ. В списке до середины приходится идти по указателям."],
+["h","Поиск","Какова средняя сложность алгоритма Quickselect (поиск k-й порядковой статистики)?",["O(n)","O(n log n)","O(log n)","O(n²)"],"После разбиения рекурсия идёт только в одну часть: n + n/2 + n/4 + … = O(n) в среднем."],
+["h","Связные списки","Как обнаружить цикл в односвязном списке за O(n) времени и O(1) памяти?",["Двумя указателями с разной скоростью (алгоритм Флойда)","Хеш-множеством посещённых узлов","Сортировкой узлов","Разворотом списка с сохранением копии"],"«Заяц» движется на 2 узла, «черепаха» на 1; при наличии цикла они встретятся. Хеш-множество требует O(n) памяти."],
+["h","Сложность","Оцените сложность фрагмента:<pre>for (i = 0; i < n; i++)\n    for (j = 0; j < i; j++)\n        count++;</pre>",["O(n²)","O(n log n)","O(n)","O(n³)"],"0 + 1 + … + (n − 1) = n(n − 1)/2 итераций."],
+["h","Сложность","Оцените сложность фрагмента:<pre>for (i = 0; i < n; i++)\n    for (j = 1; j < n; j *= 2)\n        count++;</pre>",["O(n log n)","O(n²)","O(n)","O(log n)"],"Внешний цикл — n итераций, внутренний — log₂ n, потому что j удваивается."],
+["h","Сложность","Оцените сложность фрагмента:<pre>for (i = n; i > 0; i /= 2)\n    for (j = 0; j < i; j++)\n        count++;</pre>",["O(n)","O(n log n)","O(log n)","O(n²)"],"n + n/2 + n/4 + … < 2n: геометрическая прогрессия."],
+["h","Сложность","Оцените сложность фрагмента:<pre>i = 1;\nwhile (i * i <= n)\n    i++;</pre>",["O(√n)","O(log n)","O(n)","O(1)"],"Цикл идёт, пока i ≤ √n."],
+["h","Сложность","Оцените сложность фрагмента:<pre>for (i = 1; i <= n; i++)\n    for (j = 1; j <= n; j += i)\n        count++;</pre>",["O(n log n)","O(n²)","O(n)","O(n√n)"],"Внутренний цикл делает n/i шагов: n · (1 + 1/2 + … + 1/n) = O(n log n), гармонический ряд."],
+["h","Сложность","Оцените сложность функции:<pre>void f(int n) {\n    if (n <= 1) return;\n    f(n / 2);\n    f(n / 2);\n}</pre>",["O(n)","O(log n)","O(n log n)","O(2ⁿ)"],"T(n) = 2T(n/2) + O(1). Дерево вызовов имеет ≈ 2n узлов: O(n)."],
+["h","Сложность","Оцените сложность функции:<pre>void f(int n) {\n    if (n <= 1) return;\n    for (int i = 0; i < n; i++) count++;\n    f(n / 2);\n}</pre>",["O(n)","O(n log n)","O(log n)","O(n²)"],"T(n) = T(n/2) + n = n + n/2 + n/4 + … = O(n)."],
+["h","Сложность","Оцените сложность функции:<pre>int f(int n) {\n    if (n <= 1) return 1;\n    return f(n - 1) + f(n - 1);\n}</pre>",["O(2ⁿ)","O(n²)","O(n)","O(n log n)"],"Каждый вызов порождает два вызова с n − 1: T(n) = 2T(n − 1) + O(1)."],
+["m","Графы","Какой обход находит кратчайшие по числу рёбер пути в невзвешенном графе?",["Поиск в ширину (BFS)","Поиск в глубину (DFS)","Алгоритм Краскала","Топологическая сортировка"],"BFS обрабатывает вершины по возрастанию расстояния от источника."],
+["m","Связные списки","Какова сложность вставки в начало односвязного списка?",["O(1)","O(n)","O(log n)","O(n²)"],"Меняются только указатель нового узла и указатель на голову."],
+["m","Графы","Сколько памяти занимает матрица смежности графа с V вершинами?",["O(V²)","O(V + E)","O(E)","O(V)"],"Матрица V × V хранит ячейку для каждой пары вершин, даже если рёбер мало."],
+["m","Деревья","В каком порядке выдаёт ключи симметричный (in-order) обход двоичного дерева поиска?",["По возрастанию","В порядке вставки","По убыванию","По уровням"],"Левое поддерево < корень < правое поддерево, поэтому обход «лево–корень–право» даёт возрастающий порядок."],
+["m","Связные списки","Какова сложность доступа к k-му элементу односвязного списка?",["O(k)","O(1)","O(log k)","O(k²)"],"До k-го элемента нужно пройти k указателей от головы."],
+["m","Графы","Какая структура данных используется в поиске в ширину?",["Очередь","Стек","Куча","Хеш-таблица"],"Вершины обрабатываются в порядке обнаружения (FIFO), то есть по уровням."],
+["m","Сортировки","Какова сложность сортировки слиянием в худшем случае?",["O(n log n)","O(n²)","O(n)","O(log n)"],"Массив всегда делится пополам (log n уровней), на каждом уровне слияние стоит O(n), независимо от входных данных."],
+["m","Сортировки","Какова средняя сложность быстрой сортировки?",["O(n log n)","O(n²)","O(n)","O(n log² n)"],"При случайном опорном элементе разбиения в среднем сбалансированы; O(n²) бывает только в худшем случае."],
+["m","Стеки и очереди","Какая структура данных подходит для проверки правильности расстановки скобок?",["Стек","Очередь","Хеш-таблица","Двоичная куча"],"Открывающая скобка кладётся в стек; закрывающая должна совпасть с вершиной."],
+["m","Графы","Сколько рёбер в дереве с n вершинами?",["n − 1","n","n + 1","2n"],"Дерево — связный граф без циклов; каждое ребро присоединяет одну новую вершину."],
+["m","Графы","Какой обход использует стек (явно или через рекурсию)?",["Поиск в глубину (DFS)","Поиск в ширину (BFS)","Алгоритм Дейкстры","Алгоритм Краскала"],"DFS уходит вглубь и возвращается назад; последняя открытая вершина обрабатывается первой (LIFO)."],
+["m","Сортировки","Сколько дополнительной памяти требует сортировка слиянием массива?",["O(n)","O(1)","O(log n)","O(n²)"],"Для слияния двух половин нужен вспомогательный буфер размера n."],
+["m","Деревья","Какова сложность поиска в несбалансированном двоичном дереве поиска в худшем случае?",["O(n)","O(log n)","O(1)","O(n log n)"],"При вставке отсортированных ключей дерево вырождается в цепочку."],
+["m","Кучи","Какова сложность извлечения минимума из двоичной min-кучи?",["O(log n)","O(1)","O(n)","O(n log n)"],"Корень заменяется последним элементом, затем выполняется просеивание вниз по высоте кучи."],
+["m","Графы","Какой алгоритм строит минимальное остовное дерево?",["Алгоритм Прима","Алгоритм Дейкстры","Алгоритм Флойда — Уоршелла","Поиск в ширину"],"Прим наращивает дерево самым дешёвым ребром к новой вершине. Дейкстра ищет кратчайшие пути, а не остов."],
+["m","Массивы","Какова сложность вставки элемента в середину массива?",["O(n)","O(1)","O(log n)","O(n²)"],"Все элементы правее места вставки нужно сдвинуть на одну позицию."]
+];
+
+const DB = [
+["h","Нормализация","Какая нормальная форма устраняет транзитивные зависимости неключевых атрибутов от ключа?",["3НФ","2НФ","1НФ","4НФ"],"3НФ требует, чтобы неключевые атрибуты зависели только от ключа, а не через другой неключевой атрибут."],
+["h","Нормализация","Какая нормальная форма устраняет частичные зависимости от составного ключа?",["2НФ","1НФ","3НФ","НФБК"],"2НФ: каждый неключевой атрибут зависит от всего ключа, а не от его части."],
+["h","Нормализация","Какое условие определяет нормальную форму Бойса — Кодда (НФБК)?",["Детерминант каждой нетривиальной функциональной зависимости — суперключ","Все атрибуты атомарны","Нет многозначных зависимостей","Нет частичных зависимостей"],"НФБК строже 3НФ: даже зависимость, в правой части которой ключевой атрибут, требует суперключа слева."],
+["h","Нормализация","Отношение R(A, B, C, D), зависимости A → B, B → C, C → D. Какой ключ потенциальный?",["A","AB","B","ABCD"],"Из A по цепочке выводятся B, C и D, значит, A⁺ = ABCD. AB и ABCD — суперключи, но не минимальные."],
+["h","Нормализация","Отношение R(A, B, C, D) с ключом AB и зависимостями AB → C, C → D. В какой наивысшей нормальной форме оно находится?",["2НФ","1НФ","3НФ","НФБК"],"Частичных зависимостей от A или B нет, поэтому 2НФ выполнена. C → D — транзитивная зависимость неключевых атрибутов, поэтому 3НФ нарушена."],
+["h","Нормализация","Отношение R(A, B, C), зависимости AB → C и C → B. Потенциальные ключи — AB и AC. В какой наивысшей нормальной форме оно находится?",["3НФ, но не НФБК","НФБК","2НФ, но не 3НФ","1НФ, но не 2НФ"],"В C → B правая часть — ключевой атрибут, поэтому 3НФ выполнена. Но C не суперключ, поэтому НФБК нарушена."],
+["h","Нормализация","Отношение R(A, B, C, D, E), зависимости A → B, B → C, CD → E. Чему равно замыкание {A}⁺?",["{A, B, C}","{A, B}","{A, B, C, E}","{A, B, C, D, E}"],"A → B, затем B → C. Для CD → E нужен D, а его в замыкании нет."],
+["h","Транзакции","Какой уровень изоляции защищает от «грязного» чтения, но допускает неповторяемое чтение?",["READ COMMITTED","READ UNCOMMITTED","REPEATABLE READ","SERIALIZABLE"],"READ COMMITTED видит только зафиксированные данные, но повторное чтение может вернуть уже изменённые значения."],
+["h","Транзакции","Какой наименьший уровень изоляции стандарта SQL исключает фантомное чтение?",["SERIALIZABLE","REPEATABLE READ","READ COMMITTED","READ UNCOMMITTED"],"По стандарту REPEATABLE READ допускает фантомы; полностью их исключает только SERIALIZABLE."],
+["h","Транзакции","Какой механизм обычно обеспечивает свойство Durability после сбоя?",["Журнал упреждающей записи (WAL)","Индексы","Представления","Триггеры"],"Изменения сначала записываются в журнал на диске; после сбоя СУБД восстанавливает зафиксированные транзакции по журналу."],
+["h","Транзакции","Что гарантирует двухфазный протокол блокировок (2PL)?",["Конфликтную сериализуемость расписаний","Отсутствие взаимоблокировок","Отсутствие блокировок на чтение","Отсутствие откатов транзакций"],"2PL гарантирует сериализуемость, но взаимоблокировки (deadlock) при нём возможны."],
+["h","Транзакции","Что такое взаимоблокировка (deadlock)?",["Две или более транзакции ждут блокировок, которые держат друг у друга","Транзакция читает незафиксированные данные","Транзакция видит новые строки при повторном запросе","Сервер отказывает из-за нехватки памяти"],"Образуется цикл ожидания. СУБД обнаруживает его и откатывает одну из транзакций."],
+["h","Индексы","Чем B+-дерево удобно для диапазонных запросов?",["Данные или ссылки хранятся только в листьях, а листья связаны в список","Все ключи хранятся в корне","Оно использует хеширование","Оно не требует сортировки ключей"],"Достаточно найти первый лист диапазона и идти по связанным листьям."],
+["h","Индексы","Есть составной индекс по (last_name, first_name). Какой запрос сможет эффективно его использовать?",["WHERE last_name = 'Ivanov'","WHERE first_name = 'Ivan'","WHERE first_name LIKE '%an'","WHERE UPPER(last_name) = 'IVANOV'"],"Правило левого префикса: индекс помогает, если условие задано по первому столбцу. Функция над столбцом мешает использовать обычный индекс."],
+["h","Индексы","Почему индекс по столбцу name, скорее всего, не ускорит запрос WHERE name LIKE '%son'?",["Шаблон начинается с %, и начало строки неизвестно","LIKE никогда не использует индексы","Индексы работают только с числами","Условие возвращает слишком мало строк"],"B-дерево упорядочено по началу строки. Шаблон 'son%' индекс использовать может, а '%son' — нет."],
+["h","Индексы","Для каких запросов подходит хеш-индекс и не подходит для каких?",["Подходит для равенства, не подходит для диапазонов","Подходит для диапазонов, не подходит для равенства","Подходит для сортировки, не подходит для поиска","Подходит для LIKE '%x%', не подходит для равенства"],"Хеш разрушает порядок ключей, поэтому BETWEEN, < и > с ним неэффективны."],
+["h","Индексы","Какое утверждение о кластеризованном индексе верно?",["Он задаёт физический порядок строк, и такой индекс в таблице может быть только один","Таких индексов может быть сколько угодно","Он хранит только хеши ключей","Он не может строиться по первичному ключу"],"Строки нельзя одновременно хранить в двух физических порядках."],
+["h","NULL","Что вернёт запрос SELECT * FROM t WHERE x NOT IN (1, 2, NULL)?",["Ни одной строки","Все строки, где x не равен 1 и 2","Все строки таблицы","Только строки, где x равен NULL"],"x NOT IN (1, 2, NULL) раскрывается в x <> 1 AND x <> 2 AND x <> NULL. Последнее сравнение даёт UNKNOWN, поэтому всё условие никогда не TRUE."],
+["h","NULL","Почему для поиска строк без пары безопаснее NOT EXISTS, чем NOT IN с подзапросом?",["Если подзапрос вернёт NULL, NOT IN не выдаст ни одной строки","NOT IN не поддерживает подзапросы","NOT EXISTS всегда использует индекс","NOT IN работает только с числами"],"NOT EXISTS проверяет наличие строк и не сравнивает значения с NULL."],
+["h","SQL: запросы","Почему нельзя использовать в WHERE псевдоним столбца, заданный в SELECT?",["WHERE логически выполняется раньше, чем SELECT","Псевдонимы запрещены стандартом SQL","WHERE не поддерживает выражения","Псевдонимы видны только в GROUP BY"],"Логический порядок: FROM → WHERE → GROUP BY → HAVING → SELECT → ORDER BY. В ORDER BY псевдоним использовать можно."],
+["h","SQL: запросы","Чем WHERE отличается от HAVING?",["WHERE фильтрует строки до группировки, HAVING — группы после агрегирования","Это синонимы","HAVING фильтрует строки до группировки","WHERE можно использовать только с агрегатами"],"Поэтому агрегатные функции допустимы в HAVING и недопустимы в WHERE."],
+["h","SQL: JOIN","Запрос: <code>A LEFT JOIN B ON A.id = B.a_id WHERE B.status = 'x'</code>. Что произойдёт со строками A, у которых нет пары в B?",["Отфильтруются: для них B.status = NULL, условие не выполняется","Останутся с NULL в столбцах B","Будут продублированы","Запрос вернёт ошибку"],"Условие на правую таблицу в WHERE фактически превращает LEFT JOIN во внутреннее соединение. Чтобы сохранить строки, условие переносят в ON."],
+["h","SQL: оконные функции","Чем ROW_NUMBER() отличается от RANK()?",["ROW_NUMBER нумерует строки подряд без повторов, RANK даёт равным значениям одинаковый ранг с пропусками после них","Ничем","RANK не допускает одинаковых значений","ROW_NUMBER работает только с GROUP BY"],"Для значений 100, 90, 90, 80 ROW_NUMBER даёт 1, 2, 3, 4, а RANK — 1, 2, 2, 4."],
+["h","SQL: команды","Какое утверждение о TRUNCATE верно для большинства СУБД?",["Удаляет все строки без условия и не вызывает построчные триггеры DELETE","Удаляет таблицу вместе со структурой","Позволяет удалять строки по условию WHERE","Всегда работает медленнее DELETE"],"TRUNCATE освобождает страницы целиком. Удаление структуры — это DROP, удаление по условию — DELETE."],
+["h","Целостность","Что произойдёт при удалении клиента, если внешний ключ заказов объявлен с ON DELETE CASCADE?",["Автоматически удалятся все заказы этого клиента","Удаление будет запрещено","В заказах customer_id станет NULL","Ничего не изменится в таблице заказов"],"CASCADE распространяет удаление на зависимые строки. SET NULL обнуляет ссылку, RESTRICT запрещает удаление."],
+["h","Целостность","Чем ограничение UNIQUE отличается от PRIMARY KEY в большинстве СУБД?",["UNIQUE допускает NULL, и таких ограничений в таблице может быть несколько","Ничем","UNIQUE не создаёт индекс","PRIMARY KEY допускает дубликаты"],"Первичный ключ один и всегда NOT NULL. Уникальных ограничений может быть несколько."],
+["h","Проектирование","Что такое слабая сущность в ER-модели?",["Сущность, которая не идентифицируется без ключа сущности-владельца","Сущность без атрибутов","Сущность, которая редко используется","Сущность только со связями многие-ко-многим"],"Например, «строка заказа» идентифицируется номером заказа и номером строки."],
+["h","Проектирование","Что такое суррогатный ключ?",["Искусственный идентификатор без бизнес-смысла, например автоинкремент","Ключ из нескольких атрибутов","Ключ из внешней системы","Временный ключ для отчётов"],"Суррогатный ключ не меняется при изменении бизнес-данных, в отличие от естественного (ИИН, email)."],
+["h","Проектирование","Чем расплачиваются за денормализацию?",["Избыточностью данных и риском аномалий обновления","Невозможностью строить индексы","Потерей связей между таблицами","Медленным чтением"],"Денормализация ускоряет чтение за счёт дублирования, и копии приходится синхронизировать."],
+["h","Проектирование","Что такое аномалия обновления?",["Один и тот же факт хранится в нескольких строках, и при изменении части из них данные становятся противоречивыми","Ошибка синтаксиса в UPDATE","Обновление без WHERE","Взаимоблокировка при обновлении"],"Пример: адрес клиента повторяется в каждом заказе и исправлен не везде."],
+["h","Распределённые системы","Что утверждает теорема CAP?",["При разделении сети распределённая система должна выбирать между согласованностью и доступностью","Любая система может обеспечить все три свойства одновременно","Масштабируемость исключает согласованность","Реляционные базы не бывают распределёнными"],"Consistency, Availability, Partition tolerance: при разделе (P) приходится жертвовать C или A."],
+["h","Распределённые системы","Что означает согласованность в конечном счёте (eventual consistency)?",["При отсутствии новых изменений все реплики со временем придут к одному состоянию","Данные всегда согласованы мгновенно","Данные никогда не согласуются","Согласованность проверяется только при запуске"],"Сразу после записи реплика может вернуть старое значение."],
+["h","Распределённые системы","Что такое шардирование?",["Горизонтальное разбиение строк таблицы между несколькими серверами","Копирование всей базы на несколько серверов","Разбиение таблицы на столбцы","Сжатие данных"],"Каждый шард хранит часть строк, например по диапазону или хешу ключа. Копирование всей базы — это репликация."],
+["h","Распределённые системы","Что верно для репликации с одним ведущим узлом (primary/replica)?",["Чтение масштабируется репликами, а запись идёт через ведущий узел","Запись можно выполнять на любой реплике","Реплики не содержат данных","Ведущий узел не принимает запросы на чтение"],"Нагрузку на чтение можно распределять, но репликам свойственна задержка обновлений."],
+["h","Транзакции","Как работает оптимистичная блокировка?",["Конфликт проверяется при записи, например по номеру версии строки","Строка блокируется сразу при чтении","Таблица блокируется целиком","Все транзакции выполняются строго последовательно"],"UPDATE … WHERE version = :v; если ничего не обновилось, значит, строку уже изменили, и операцию повторяют."],
+["h","Безопасность","Какой способ надёжнее всего защищает от SQL-инъекций?",["Параметризованные (подготовленные) запросы","Экранирование кавычек вручную","Скрытие текста ошибок","Ограничение длины полей ввода"],"Параметры передаются отдельно от текста запроса и никогда не интерпретируются как SQL."],
+["h","Представления","Чем материализованное представление отличается от обычного?",["Оно хранит результат запроса физически и требует обновления","Оно всегда актуально без обновления","Его нельзя индексировать","Это синоним обычного представления"],"Обычное представление выполняет запрос при каждом обращении; материализованное читает сохранённый снимок."],
+["h","SQL: запросы","Что такое коррелированный подзапрос?",["Подзапрос, который ссылается на столбцы внешнего запроса и логически вычисляется для каждой его строки","Подзапрос во FROM","Подзапрос без WHERE","Подзапрос, возвращающий одно значение"],"Например, WHERE salary > (SELECT AVG(salary) FROM emp e2 WHERE e2.dept = e1.dept)."],
+["h","SQL: JOIN","В таблице A 4 строки, в таблице B 5 строк. Сколько строк вернёт A CROSS JOIN B?",["20","9","5","4"],"Декартово произведение: каждая строка A соединяется с каждой строкой B, 4 · 5 = 20."],
+["h","Транзакции","Что означает атомарность (Atomicity) транзакции?",["Выполняются либо все её операции, либо ни одна","Транзакция выполняется очень быстро","Транзакция изменяет одну строку","Транзакцию нельзя отменить"],"При ошибке все изменения транзакции откатываются."],
+["m","SQL: команды","Какая команда относится к DDL?",["ALTER","SELECT","INSERT","UPDATE"],"DDL описывает структуру: CREATE, ALTER, DROP. INSERT и UPDATE относятся к DML."],
+["m","SQL: команды","К какой группе команд относится GRANT?",["DCL — управление доступом","DDL","DML","TCL"],"GRANT и REVOKE выдают и отзывают привилегии."],
+["m","NULL","Какая агрегатная функция учитывает строки с NULL?",["COUNT(*)","COUNT(столбец)","SUM(столбец)","AVG(столбец)"],"COUNT(*) считает строки целиком; остальные агрегаты пропускают NULL."],
+["m","Целостность","Какое утверждение о первичном ключе верно?",["Его значения уникальны и не могут быть NULL","Он может содержать повторы","В таблице может быть несколько первичных ключей","Он всегда состоит из одного столбца"],"Первичный ключ уникален и NOT NULL; может быть составным, но в таблице он один."],
+["m","SQL: JOIN","Какое соединение возвращает только строки, имеющие пару в обеих таблицах?",["INNER JOIN","LEFT JOIN","FULL OUTER JOIN","CROSS JOIN"],"Внешние соединения добавляют строки без пары с NULL; CROSS JOIN возвращает все комбинации."],
+["m","Проектирование","Какая связь в реляционной модели требует промежуточной таблицы?",["Многие ко многим","Один к одному","Один ко многим","Рекурсивная один ко многим"],"M:N реализуется таблицей с двумя внешними ключами."],
+["m","SQL: запросы","Как по умолчанию сортирует ORDER BY без ASC и DESC?",["По возрастанию","По убыванию","В порядке вставки","Случайно"],"По умолчанию используется ASC."],
+["m","NULL","Как правильно проверить, что значение столбца отсутствует?",["x IS NULL","x = NULL","x == NULL","x IN (NULL)"],"Любое сравнение с NULL через = даёт UNKNOWN, а не TRUE."],
+["m","SQL: запросы","Что делает ключевое слово DISTINCT в SELECT?",["Удаляет из результата повторяющиеся строки","Сортирует результат","Удаляет строки с NULL","Ограничивает число строк"],"SELECT DISTINCT оставляет по одной копии каждой уникальной комбинации выбранных столбцов."],
+["m","Целостность","Какое ограничение запрещает хранить NULL в столбце?",["NOT NULL","UNIQUE","CHECK (столбец > 0)","DEFAULT"],"UNIQUE допускает NULL, DEFAULT лишь подставляет значение, когда оно не указано."],
+["m","SQL: команды","Чем DELETE FROM t отличается от DROP TABLE t?",["DELETE удаляет строки и сохраняет таблицу, DROP удаляет таблицу целиком","Ничем","DROP удаляет только строки","DELETE удаляет таблицу вместе с индексами"],"После DROP TABLE таблицы со структурой и индексами больше нет; после DELETE остаётся пустая таблица."],
+["m","Целостность","Что такое внешний ключ?",["Столбец, ссылающийся на первичный или уникальный ключ другой (или той же) таблицы","Ключ, хранящийся в другой базе данных","Любой индексированный столбец","Ключ шифрования данных"],"Внешний ключ обеспечивает ссылочную целостность между таблицами."],
+["m","SQL: запросы","Какой оператор объединяет результаты двух запросов и удаляет дубликаты?",["UNION","UNION ALL","JOIN","INTERSECT ALL"],"UNION ALL сохраняет дубликаты, JOIN соединяет столбцы, а не строки."],
+["m","Транзакции","Какая команда отменяет изменения текущей транзакции?",["ROLLBACK","COMMIT","SAVEPOINT","REVOKE"],"COMMIT фиксирует изменения, ROLLBACK откатывает их."]
+];
+
+/* =====================================================================
+   ГЕНЕРАТОРЫ ЗАДАНИЙ (детерминированный seed → стабильная база)
+   ===================================================================== */
+function rng(seed){let a=seed>>>0;return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const ri=(r,a,b)=>a+Math.floor(r()*(b-a+1));
+const pk=(r,a)=>a[Math.floor(r()*a.length)];
+const shR=(r,a)=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const range=(a,b)=>Array.from({length:b-a+1},(_,i)=>a+i);
+const num=x=>{const v=Math.round(x*100)/100;return String(v).replace(".",",").replace("-","−")};
+const gcd=(a,b)=>b?gcd(b,a%b):a;
+const frac=(a,b)=>{const g=gcd(a,b);return b/g===1?String(a/g):`${a/g}/${b/g}`};
+const comb=(n,k)=>{let c=1;for(let i=1;i<=k;i++)c=c*(n-k+i)/i;return Math.round(c)};
+const perm=(n,k)=>{let p=1;for(let i=0;i<k;i++)p*=n-i;return p};
+const arr=a=>"["+a.join(", ")+"]";
+const SUP={2:"²",3:"³",4:"⁴"};
+function nOpts(c,cands,o={}){const min=o.min??-Infinity,fmt=o.fmt||num;const out=[fmt(c)];const add=v=>{if(out.length>=4||typeof v!=="number"||!Number.isFinite(v)||v<min)return;const s=fmt(v);if(!out.includes(s))out.push(s)};cands.forEach(add);for(let k=1;out.length<4&&k<60;k++){add(c+k);add(c-k)}return out.length===4?out:null}
+function sOpts(c,cands){const out=[c];cands.forEach(x=>{if(out.length<4&&x!=null&&!out.includes(x))out.push(x)});return out.length===4?out:null}
+function tbl(head,rows){return `<table><thead><tr>${head.map(h=>`<th>${h}</th>`).join("")}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map(v=>`<td>${v===null?"<i>NULL</i>":v}</td>`).join("")}</tr>`).join("")}</tbody></table>`}
+const sgn=c=>c>0?"+ "+c:"− "+(-c);
+
+/* ---------- аналитическое мышление ---------- */
+const G_AN=[
+{t:"Числовые ряды",d:"h",f:r=>{const s=ri(r,1,20),d=ri(r,2,6),k=ri(r,2,5);const a=[s];let df=d;for(let i=0;i<6;i++){a.push(a[a.length-1]+df);df+=k}const c=a[6];return{q:`Продолжите ряд: ${a.slice(0,6).join(", ")}, …`,o:nOpts(c,[a[5]+(a[5]-a[4]),c+k,c-k+1,c+1]),e:`Разности соседних членов растут на ${k}: ${range(0,4).map(i=>a[i+1]-a[i]).join(", ")}. Следующая разность ${c-a[5]}, поэтому ${a[5]} + ${c-a[5]} = ${c}.`}}},
+{t:"Числовые ряды",d:"h",f:r=>{let x=ri(r,1,5);const m=ri(r,2,3),c=pk(r,[-2,-1,1,2,3]);const a=[x];for(let i=0;i<5;i++){x=x*m+c;a.push(x)}if(a.some(v=>v<=0))return null;return{q:`Продолжите ряд: ${a.slice(0,5).join(", ")}, …`,o:nOpts(a[5],[a[4]*m,a[4]*m+c+1,a[4]*m-c,a[4]+(a[4]-a[3])*m]),e:`Каждый следующий член получается по правилу «× ${m} ${sgn(c)}»: ${a[4]} · ${m} ${sgn(c)} = ${a[5]}.`}}},
+{t:"Числовые ряды",d:"h",f:r=>{const x=ri(r,1,10),dx=ri(r,2,5),y=ri(r,25,45),dy=ri(r,2,6);const c=x+3*dx;return{q:`Продолжите ряд: ${[x,y,x+dx,y-dy,x+2*dx,y-2*dy].join(", ")}, …`,o:nOpts(c,[y-3*dy,c+dx,c-1,c+1]),e:`Здесь два чередующихся ряда: на нечётных местах ${x}, ${x+dx}, ${x+2*dx} (шаг +${dx}), на чётных ${y}, ${y-dy}, ${y-2*dy} (шаг −${dy}). Седьмой член относится к первому ряду: ${x+2*dx} + ${dx} = ${c}.`}}},
+{t:"Числовые ряды",d:"h",f:r=>{const n0=ri(r,2,7),p=pk(r,[2,3]),ad=pk(r,[-2,-1,1,2,3]);const a=range(0,5).map(i=>Math.pow(n0+i,p)+ad);return{q:`Продолжите ряд: ${a.slice(0,5).join(", ")}, …`,o:nOpts(a[5],[Math.pow(n0+5,p),a[5]+(a[4]-a[3]),Math.pow(n0+6,p)+ad,a[5]+1]),e:`Члены ряда — n${SUP[p]} ${sgn(ad)} для n = ${n0}, ${n0+1}, …. Шестой член: ${n0+5}${SUP[p]} ${sgn(ad)} = ${a[5]}.`}}},
+{t:"Числовые ряды",d:"h",f:r=>{const a=[ri(r,1,6),ri(r,2,9)];while(a.length<7)a.push(a[a.length-1]+a[a.length-2]);return{q:`Продолжите ряд: ${a.slice(0,6).join(", ")}, …`,o:nOpts(a[6],[2*a[5],a[5]+a[3],a[6]-1,a[6]+1]),e:`Каждый член равен сумме двух предыдущих: ${a[4]} + ${a[5]} = ${a[6]}.`}}},
+{t:"Проценты",d:"h",f:r=>{const P=ri(r,2,9)*1000,x=pk(r,[10,20,30,40]),y=pk(r,[10,20,30,40]);const c=P*(100+x)*(100-y)/10000;return{q:`Цену товара ${P} ₸ сначала повысили на ${x}%, а затем снизили на ${y}%. Какой стала цена?`,o:nOpts(c,[P*(100+x-y)/100,P,c+P/10,c-P/20],{fmt:v=>num(v)+" ₸",min:0}),e:`Проценты применяются по очереди: ${P} · ${num((100+x)/100)} = ${num(P*(100+x)/100)}, затем · ${num((100-y)/100)} = ${num(c)} ₸. Складывать проценты (${x}% − ${y}%) нельзя: второе изменение считается от уже новой цены.`}}},
+{t:"Проценты",d:"h",f:r=>{const [x,y]=pk(r,[[25,20],[100,50],[60,37.5],[150,60],[300,75],[400,80],[20,100/6]]);const what=pk(r,["цену","тариф","зарплату","стоимость подписки"]);if(y===100/6)return null;return{q:`${what[0].toUpperCase()+what.slice(1)} повысили на ${x}%. На сколько процентов теперь нужно её снизить, чтобы вернуться к исходному значению?`,o:sOpts(num(y)+"%",[x+"%",num(x/2)+"%",num(100-y)+"%",num(y+5)+"%"]),e:`После повышения значение равно ${num(1+x/100)} от исходного. Снижение должно составить ${x} / ${100+x} = ${num(y)}% от нового значения, а не ${x}%.`}}},
+{t:"Совместная работа",d:"h",f:r=>{const [a,b]=pk(r,[[3,6],[4,12],[6,12],[10,15],[12,24],[20,30],[5,20],[15,30],[14,35],[8,24],[9,18],[18,36]]);const who=pk(r,[["оператор","оператор"],["насос","насос"],["принтер","принтер"],["сервер","сервер"]]);const c=a*b/(a+b);return{q:`Первый ${who[0]} выполняет работу за ${a} ч, второй — за ${b} ч. За сколько часов они выполнят её, работая вместе?`,o:nOpts(c,[(a+b)/2,Math.min(a,b)/2,a+b,c+1],{fmt:v=>num(v)+" ч",min:0.5}),e:`Производительности складываются: 1/${a} + 1/${b} = ${frac(a+b,a*b)} работы в час, значит, вся работа займёт ${frac(a*b,a+b)} = ${num(c)} ч.`}}},
+{t:"Совместная работа",d:"h",f:r=>{const [a,b]=pk(r,[[3,6],[4,12],[6,12],[10,15],[12,24],[20,30],[5,20],[15,30],[14,35],[8,24],[9,18],[18,36]]);const c=a*b/(a+b);return{q:`Две бригады вместе выполняют заказ за ${num(c)} дн., первая бригада одна — за ${a} дн. За сколько дней выполнит заказ одна вторая бригада?`,o:nOpts(b,[a,2*c,b-a+c,b+a/2],{fmt:v=>num(v)+" дн.",min:1}),e:`Производительность второй: 1/${num(c)} − 1/${a} = 1/${b}. Значит, ей нужно ${b} дн.`}}},
+{t:"Множества",d:"h",f:r=>{const A=ri(r,3,12),B=ri(r,3,12),C=ri(r,3,12),ab=ri(r,1,6),ac=ri(r,1,6),bc=ri(r,1,6),abc=ri(r,1,4),none=ri(r,0,9);const nA=A+ab+ac+abc,nB=B+ab+bc+abc,nC=C+ac+bc+abc,pAB=ab+abc,pAC=ac+abc,pBC=bc+abc,N=A+B+C+ab+ac+bc+abc+none;return{q:`В группе ${N} студентов. Python изучают ${nA}, Java — ${nB}, SQL — ${nC}. Python и Java — ${pAB}, Python и SQL — ${pAC}, Java и SQL — ${pBC}, все три языка — ${abc}. Сколько студентов не изучают ни один из этих языков?`,o:nOpts(none,[none+abc,none-abc,none+2*abc,none+1],{min:0}),e:`Формула включений-исключений: ${nA} + ${nB} + ${nC} − ${pAB} − ${pAC} − ${pBC} + ${abc} = ${N-none} изучают хотя бы один язык. ${N} − ${N-none} = ${none}.`}}},
+{t:"Вероятность",d:"h",f:r=>{const k=pk(r,[3,4,5,6,8,9,10,11]);const pairs=[];for(let i=1;i<=6;i++){const j=k-i;if(j>=1&&j<=6)pairs.push(`(${i}, ${j})`)}const w=pairs.length;return{q:`Бросают две игральные кости. Какова вероятность, что сумма выпавших очков равна ${k}?`,o:sOpts(frac(w,36),[frac(w+1,36),frac(w,11),frac(Math.max(1,w-1),36),frac(w,18)]),e:`Всего 6 · 6 = 36 равновероятных исходов. Сумму ${k} дают ${w}: ${pairs.join(", ")}. Вероятность ${w}/36 = ${frac(w,36)}.`}}},
+{t:"Вероятность",d:"h",f:r=>{const k=ri(r,8,11);let w=0;for(let i=1;i<=6;i++)for(let j=1;j<=6;j++)if(i+j>=k)w++;return{q:`Бросают две игральные кости. Какова вероятность, что сумма очков будет не меньше ${k}?`,o:sOpts(frac(w,36),[frac(w-(6-Math.abs(k-7)),36),frac(w+1,36),frac(13-k,11),frac(w,30)]),e:`Считаем исходы с суммой ≥ ${k}: ${range(k,12).map(s=>`${s} — ${6-Math.abs(s-7)}`).join(", ")}. Всего ${w} из 36, то есть ${frac(w,36)}.`}}},
+{t:"Комбинаторика",d:"h",f:r=>{const n=ri(r,6,11),k=ri(r,2,4);const C=comb(n,k),P=perm(n,k);return{q:`Сколькими способами можно выбрать ${k} человек в проектную группу из ${n} кандидатов, если роли в группе одинаковы?`,o:nOpts(C,[P,comb(n,k+1),n*k,comb(n,k-1)],{min:1}),e:`Порядок выбора не важен, поэтому это сочетания: C(${n}, ${k}) = ${n}! / (${k}! · ${n-k}!) = ${C}. Число ${P} получилось бы, если бы роли различались.`}}},
+{t:"Комбинаторика",d:"h",f:r=>{const n=ri(r,5,10);const P=perm(n,3);return{q:`Из ${n} сотрудников нужно выбрать руководителя проекта, аналитика и тестировщика (один человек — одна роль). Сколько существует вариантов?`,o:nOpts(P,[comb(n,3),n*3,n*n*n,perm(n,2)],{min:1}),e:`Роли различаются, поэтому важен порядок: ${n} · ${n-1} · ${n-2} = ${P}. C(${n}, 3) = ${comb(n,3)} не учитывает распределение ролей.`}}},
+{t:"Пространственное мышление",d:"h",f:r=>{const h=ri(r,1,11),m=pk(r,[10,20,40,50]);const raw=Math.abs(30*h-5.5*m);const a=Math.min(raw,360-raw);let nv=Math.abs(30*h-6*m);nv=Math.min(nv,360-nv);return{q:`Какой (меньший) угол образуют часовая и минутная стрелки в ${h}:${String(m).padStart(2,"0")}?`,o:nOpts(a,[nv,a+15,Math.abs(a-15),360-a],{fmt:v=>num(v)+"°",min:0}),e:`Минутная стрелка: ${m} · 6° = ${6*m}°. Часовая за ${m} мин сдвигается от ${h}·30° = ${30*h}° ещё на ${m} · 0,5° = ${num(0.5*m)}°, то есть стоит на ${num(30*h+0.5*m)}°. Разница ${num(raw)}°${raw>180?`, меньший угол 360° − ${num(raw)}° = ${num(a)}°`:""}.`}}},
+{t:"Средние величины",d:"h",f:r=>{const n=ri(r,4,9),a=ri(r,60,80),dl=pk(r,[1,2,3,-1,-2,-3]);const b=a+dl,x=(n+1)*b-n*a;if(x<0||x>100)return null;return{q:`Средний балл ${n} студентов равен ${a}. Когда к ним добавили ещё одного студента, средний балл стал ${b}. Какой балл у нового студента?`,o:nOpts(x,[b,b+dl*n,x+dl,a+2*dl],{min:0}),e:`Сумма баллов была ${n} · ${a} = ${n*a}, стала ${n+1} · ${b} = ${(n+1)*b}. Балл нового студента: ${(n+1)*b} − ${n*a} = ${x}.`}}},
+{t:"Средние величины",d:"h",f:r=>{const [v1,v2,c]=pk(r,[[40,60,48],[30,60,40],[60,90,72],[20,30,24],[45,90,60],[48,80,60],[30,70,42],[60,120,80],[40,120,60],[50,75,60]]);const d=ri(r,1,4)*120;return{q:`Автомобиль проехал ${d} км из города A в город B со скоростью ${v1} км/ч, а обратно по той же дороге — со скоростью ${v2} км/ч. Какова средняя скорость на всём пути?`,o:nOpts(c,[(v1+v2)/2,(v1+v2)/2+5,c-4,v2-v1+c],{fmt:v=>num(v)+" км/ч",min:1}),e:`Средняя скорость = весь путь / всё время = 2·${v1}·${v2} / (${v1} + ${v2}) = ${c} км/ч. Среднее арифметическое (${num((v1+v2)/2)}) не подходит: с меньшей скоростью машина ехала дольше.`}}},
+{t:"Комбинаторика",d:"h",f:r=>{const d=ri(r,1,9),N=pk(r,[99,150,200,250,300,500]);let c=0,nums=0;for(let i=1;i<=N;i++){const k=String(i).split("").filter(ch=>ch===String(d)).length;c+=k;if(k)nums++}return{q:`Сколько раз цифра ${d} встречается при записи всех целых чисел от 1 до ${N}?`,o:nOpts(c,[nums,c+1,c-1,c+10],{min:0}),e:`Считаем каждый разряд отдельно: единицы, десятки${N>=100?" и сотни":""}. Числа вроде ${d}${d} дают два вхождения, поэтому чисел с цифрой ${d} (${nums}) меньше, чем вхождений. Итого ${c}.`}}},
+{t:"Текстовые задачи",d:"h",f:r=>{const y=ri(r,4,12),t=ri(r,2,10),k=pk(r,[2,3]);const x=k*(y+t)-t;if(x-y<20||x>65)return null;return{q:`Отцу ${x} лет, сыну ${y}. Через сколько лет отец станет в ${k} раза старше сына?`,o:nOpts(t,[t+1,t-1,t+2,Math.round(x/k)-y],{min:1}),e:`Через t лет: ${x} + t = ${k}·(${y} + t), откуда ${x} − ${k*y} = ${k-1}t и t = ${t}. Проверка: ${x+t} = ${k} · ${y+t}.`}}},
+{t:"Текстовые задачи",d:"h",f:r=>{const a=ri(r,1,6),b=ri(r,1,6),p=pk(r,[10,20,30,40,50,60]),q=pk(r,[10,20,30,40,50,60]);if(p===q)return null;const c=(a*p+b*q)/(a+b);if(!Number.isInteger(c)||c===(p+q)/2)return null;return{q:`Смешали ${a} л ${p}%-го раствора соли и ${b} л ${q}%-го раствора. Какова концентрация соли в смеси?`,o:nOpts(c,[(p+q)/2,c+5,c-5,(p+q)/2+5],{fmt:v=>num(v)+"%",min:0}),e:`Соли в смеси: ${a} · ${num(p/100)} + ${b} · ${num(q/100)} = ${num((a*p+b*q)/100)} л на ${a+b} л раствора, то есть ${c}%. Среднее (${num((p+q)/2)}%) было бы верным только при равных объёмах.`}}},
+{t:"Анализ данных",d:"h",f:r=>{const base=ri(r,4,9)*100;const gs=shR(r,[10,20,25,-10,-20,50,40,-25]).slice(0,3);if(Math.max(...gs)<=0)return null;const v=[base];for(const g of gs){const nv=v[v.length-1]*(100+g)/100;if(!Number.isInteger(nv))return null;v.push(nv)}const Y=[2021,2022,2023,2024];const best=gs.indexOf(Math.max(...gs));const inc=[1,2,3].map(i=>v[i]-v[i-1]);const bestAbs=inc.indexOf(Math.max(...inc));return{q:`Число заявок по годам:${tbl(["Год","Заявок"],Y.map((y,i)=>[y,v[i]]))}В каком году рост числа заявок по сравнению с предыдущим годом был наибольшим в процентах?`,o:sOpts(String(Y[best+1]),Y.filter(y=>y!==Y[best+1]).map(String)),e:`Изменения к предыдущему году: ${[1,2,3].map(i=>`${Y[i]}: ${gs[i-1]>0?"+":""}${gs[i-1]}%`).join(", ")}. Наибольший относительный рост — в ${Y[best+1]}.${bestAbs!==best?` Наибольший прирост в штуках был в ${Y[bestAbs+1]}, но в процентах он меньше.`:""}`}}},
+{t:"Анализ данных",d:"h",f:r=>{const base=ri(r,4,9)*100;const gs=shR(r,[10,20,25,-10,-20,50,40,-25]).slice(0,3);const v=[base];for(const g of gs){const nv=v[v.length-1]*(100+g)/100;if(!Number.isInteger(nv))return null;v.push(nv)}const tot=(v[3]/v[0]-1)*100;const s=gs.reduce((a,b)=>a+b,0);if(Math.abs(tot-s)<1)return null;const f=x=>(x>0?"+":"")+num(x)+"%";return{q:`Выручка по годам (млн ₸):${tbl(["Год","Выручка"],[2021,2022,2023,2024].map((y,i)=>[y,v[i]]))}На сколько процентов изменилась выручка за весь период с 2021 по 2024 год?`,o:sOpts(f(tot),[f(s),f(tot+10),f(tot-10),f(-tot)]),e:`Общее изменение считается от начального значения: (${v[3]} − ${v[0]}) / ${v[0]} = ${f(tot)}. Сумма годовых процентов (${f(s)}) неверна: каждый год считается от своей базы.`}}},
+{t:"Шифры",d:"m",f:r=>{const w=pk(r,["CODE","DATA","GRAPH","STACK","QUEUE","ARRAY","MODEL","LOGIC","TABLE","QUERY","CACHE","TOKEN"]),k=ri(r,2,5);const enc=(s,k)=>s.split("").map(ch=>String.fromCharCode((ch.charCodeAt(0)-65+k+26)%26+65)).join("");return{q:`Каждую букву слова заменяют буквой латинского алфавита, стоящей на ${k} позиции дальше (после Z снова идёт A). Как зашифруется слово ${w}?`,o:sOpts(enc(w,k),[enc(w,k+1),enc(w,k-1),enc(w,-k)]),e:`Сдвигаем каждую букву на ${k}: ${w.split("").map(ch=>ch+"→"+enc(ch,k)).join(", ")}.`}}},
+{t:"Множества",d:"m",f:r=>{const both=ri(r,3,10),a=ri(r,5,20),b=ri(r,5,20),none=ri(r,1,10);const nA=a+both,nB=b+both,N=a+b+both+none;return{q:`Из ${N} сотрудников ${nA} владеют Python, ${nB} — Java, ${both} — обоими языками. Сколько сотрудников не владеют ни одним из этих языков?`,o:nOpts(none,[none-both,none+both,N-nA,none+1],{min:0}),e:`Хотя бы одним языком владеют ${nA} + ${nB} − ${both} = ${N-none}: тех, кто знает оба, нельзя считать дважды. ${N} − ${N-none} = ${none}.`}}}
+];
+
+/* ---------- алгоритмы ---------- */
+const bubbleS=a=>{a=a.slice();const s=[a.slice()];for(let p=0;p<a.length-1;p++){for(let j=0;j<a.length-1-p;j++)if(a[j]>a[j+1])[a[j],a[j+1]]=[a[j+1],a[j]];s.push(a.slice())}return s};
+const insS=a=>{a=a.slice();const s=[a.slice()];for(let i=1;i<a.length;i++){const x=a[i];let j=i-1;while(j>=0&&a[j]>x){a[j+1]=a[j];j--}a[j+1]=x;s.push(a.slice())}return s};
+const selS=a=>{a=a.slice();const s=[a.slice()];for(let i=0;i<a.length-1;i++){let m=i;for(let j=i+1;j<a.length;j++)if(a[j]<a[m])m=j;[a[i],a[m]]=[a[m],a[i]];s.push(a.slice())}return s};
+function sortGen(fn,name,step,desc){return{t:"Сортировки",d:"h",f:r=>{const a=shR(r,range(1,60)).slice(0,6);const S=fn(a);const k=ri(r,1,3);const o=sOpts(arr(S[k]),[arr(S[k-1]),arr(S[k+1]),arr(bubbleS(a)[k]),arr(insS(a)[k]),arr(selS(a)[k]),arr(S[5])]);if(!o)return null;return{q:`Массив ${arr(a)} сортируют по возрастанию ${name}. Как он будет выглядеть после ${k}-${step}?`,o,e:`${desc} Состояния: ${S.slice(0,k+1).map(arr).join(" → ")}.`}}}}
+function bstBuild(keys){let root=null;const ins=(n,k)=>{if(!n)return{k,l:null,r:null};if(k<n.k)n.l=ins(n.l,k);else n.r=ins(n.r,k);return n};keys.forEach(k=>root=ins(root,k));return root}
+const preO=n=>n?[n.k,...preO(n.l),...preO(n.r)]:[];
+const postO=n=>n?[...postO(n.l),...postO(n.r),n.k]:[];
+const lvlO=n=>{const q=[n],o=[];while(q.length){const x=q.shift();o.push(x.k);x.l&&q.push(x.l);x.r&&q.push(x.r)}return o};
+const htO=n=>n?1+Math.max(htO(n.l),htO(n.r)):-1;
+function heapIns(keys){const h=[];for(const k of keys){h.push(k);let i=h.length-1;while(i>0){const p=(i-1)>>1;if(h[p]>h[i]){[h[p],h[i]]=[h[i],h[p]];i=p}else break}}return h}
+function heapify(keys){const h=keys.slice(),n=h.length;const down=i=>{for(;;){let m=i;const l=2*i+1,rr=2*i+2;if(l<n&&h[l]<h[m])m=l;if(rr<n&&h[rr]<h[m])m=rr;if(m===i)return;[h[i],h[m]]=[h[m],h[i]];i=m}};for(let i=(n>>1)-1;i>=0;i--)down(i);return h}
+function randGraph(r,n,extra){const E=new Set(),adj=Array.from({length:n+1},()=>[]);const add=(u,v)=>{const k=Math.min(u,v)+"-"+Math.max(u,v);if(u===v||E.has(k))return;E.add(k);adj[u].push(v);adj[v].push(u)};const ord=[1,...shR(r,range(2,n))];for(let i=1;i<n;i++)add(ord[i],ord[ri(r,0,i-1)]);for(let i=0;i<extra;i++)add(ri(r,1,n),ri(r,1,n));adj.forEach(a=>a.sort((x,y)=>x-y));return{edges:[...E].map(k=>k.split("-").map(Number)).sort((a,b)=>a[0]-b[0]||a[1]-b[1]),adj}}
+const bfsO=(adj,s)=>{const seen=new Set([s]),q=[s],o=[];while(q.length){const u=q.shift();o.push(u);for(const v of adj[u])if(!seen.has(v)){seen.add(v);q.push(v)}}return o};
+const dfsO=(adj,s)=>{const seen=new Set(),o=[];const go=u=>{seen.add(u);o.push(u);for(const v of adj[u])if(!seen.has(v))go(v)};go(s);return o};
+function graphGen(kind){return{t:"Графы",d:"h",f:r=>{const n=ri(r,6,7);const {edges,adj}=randGraph(r,n,ri(r,2,3));const B=bfsO(adj,1),D=dfsO(adj,1);if(arr(B)===arr(D))return null;const ans=kind==="bfs"?B:D,other=kind==="bfs"?D:B;const p1=[1,...shR(r,range(2,n))],p2=[1,...shR(r,range(2,n))];const o=sOpts(arr(ans),[arr(other),arr(range(1,n)),arr(p1),arr(p2)]);if(!o)return null;return{q:`Неориентированный граф задан рёбрами: ${edges.map(e=>e.join("–")).join(", ")}. Каков порядок посещения вершин при ${kind==="bfs"?"поиске в ширину (BFS)":"рекурсивном поиске в глубину (DFS)"} из вершины 1, если соседи перебираются по возрастанию номеров?`,o,e:kind==="bfs"?`BFS использует очередь и обходит граф по уровням: ${arr(B)}. Для сравнения, DFS дал бы ${arr(D)}.`:`DFS уходит вглубь по первому непосещённому соседу и возвращается назад только в тупике: ${arr(D)}. BFS дал бы ${arr(B)}.`}}}}
+
+const G_ALGO=[
+{t:"Поиск",d:"h",f:r=>{const n=ri(r,9,15);const a=[ri(r,1,9)];while(a.length<n)a.push(a[a.length-1]+ri(r,1,9));const ti=ri(r,0,n-1),t=a[ti];let l=0,h=n-1,c=0;const path=[];while(l<=h){const m=(l+h)>>1;c++;path.push(a[m]);if(a[m]===t)break;if(a[m]<t)l=m+1;else h=m-1}return{q:`Бинарный поиск ищет число ${t} в массиве ${arr(a)} (индексы с 0, mid = ⌊(l + r) / 2⌋). Сколько сравнений с элементами массива он выполнит?`,o:nOpts(c,[c+1,c-1,Math.ceil(Math.log2(n+1)),ti+1],{min:1}),e:`Проверяемые элементы по порядку: ${path.join(" → ")}. Число сравнений: ${c}.`}}},
+{t:"Стеки и очереди",d:"h",f:r=>{const ops=[],st=[],vals=shR(r,range(1,40)),pushed=[];let vi=0;for(let i=0;i<10;i++){if(!st.length||r()<0.58){const v=vals[vi++];st.push(v);pushed.push(v);ops.push(`push(${v})`)}else{st.pop();ops.push("pop()")}}if(!st.length||pushed.length<5)return null;const top=st[st.length-1];return{q:`Над пустым стеком выполнили операции: <code>${ops.join(", ")}</code>. Какое значение окажется на вершине?`,o:sOpts(String(top),shR(r,pushed.filter(v=>v!==top)).map(String)),e:`Стек работает по принципу LIFO. После всех операций (снизу вверх): ${arr(st)}. На вершине ${top}.`}}},
+{t:"Стеки и очереди",d:"h",f:r=>{const ops=[],q=[],vals=shR(r,range(1,40)),pushed=[];let vi=0;for(let i=0;i<10;i++){if(!q.length||r()<0.58){const v=vals[vi++];q.push(v);pushed.push(v);ops.push(`enqueue(${v})`)}else{q.shift();ops.push("dequeue()")}}if(!q.length||pushed.length<5)return null;const f=q[0];return{q:`Над пустой очередью выполнили операции: <code>${ops.join(", ")}</code>. Какой элемент окажется в начале очереди?`,o:sOpts(String(f),[String(q[q.length-1]),...shR(r,pushed.filter(v=>v!==f)).map(String)]),e:`Очередь работает по принципу FIFO: dequeue удаляет самый ранний из оставшихся. Итоговое содержимое (от начала): ${arr(q)}.`}}},
+sortGen(bubbleS,"пузырьковой сортировкой","го прохода","Каждый проход «всплывает» максимум из неотсортированной части в её конец."),
+sortGen(insS,"сортировкой вставками","й итерации внешнего цикла (вставки очередного элемента)","На i-й итерации элемент a[i] вставляется на своё место в уже отсортированный префикс."),
+sortGen(selS,"сортировкой выбором","го прохода","На каждом проходе минимум неотсортированной части меняется местами с её первым элементом."),
+{t:"Деревья",d:"h",f:r=>{const keys=shR(r,range(1,60)).slice(0,7);const T=bstBuild(keys);const o=sOpts(arr(preO(T)),[arr(postO(T)),arr(lvlO(T)),arr(keys),arr([...keys].sort((a,b)=>a-b))]);if(!o)return null;return{q:`В пустое двоичное дерево поиска по очереди вставили ключи ${keys.join(", ")}. Каков прямой (pre-order) обход полученного дерева?`,o,e:`Прямой обход: корень → левое поддерево → правое поддерево. Корень ${keys[0]}, обход: ${arr(preO(T))}. Обратный (post-order) был бы ${arr(postO(T))}.`}}},
+{t:"Деревья",d:"h",f:r=>{const keys=shR(r,range(1,60)).slice(0,7);const T=bstBuild(keys);const o=sOpts(arr(postO(T)),[arr(preO(T)),arr(lvlO(T)),arr([...keys].sort((a,b)=>a-b)),arr([...keys].reverse())]);if(!o)return null;return{q:`В пустое двоичное дерево поиска по очереди вставили ключи ${keys.join(", ")}. Каков обратный (post-order) обход дерева?`,o,e:`Обратный обход: левое поддерево → правое поддерево → корень, поэтому корень ${keys[0]} будет последним: ${arr(postO(T))}.`}}},
+{t:"Деревья",d:"h",f:r=>{const keys=shR(r,range(1,60)).slice(0,8);const T=bstBuild(keys);const h=htO(T);return{q:`В пустое двоичное дерево поиска по очереди вставили ключи ${keys.join(", ")}. Какова высота дерева (высота одного корня = 0)?`,o:nOpts(h,[h+1,h-1,Math.floor(Math.log2(8)),7],{min:0}),e:`Уровни дерева (обход по уровням): ${arr(lvlO(T))}. Самый длинный путь от корня до листа содержит ${h} рёбер.`}}},
+{t:"Кучи",d:"h",f:r=>{const keys=shR(r,range(1,50)).slice(0,7);const H=heapIns(keys);const o=sOpts(arr(H),[arr(heapify(keys)),arr([...keys].sort((a,b)=>a-b)),arr(keys),arr(heapIns([...keys].reverse()))]);if(!o)return null;return{q:`Ключи ${keys.join(", ")} по одному вставляют в пустую двоичную min-кучу (просеивание вверх). Как будет выглядеть массив кучи?`,o,e:`После каждой вставки элемент поднимается, пока он меньше родителя (родитель i — ⌊(i − 1)/2⌋). Итог: ${arr(H)}. Отсортированный массив тоже является кучей, но вставками получается другой.`}}},
+{t:"Кучи",d:"h",f:r=>{const keys=shR(r,range(1,50)).slice(0,7);const H=heapify(keys);const o=sOpts(arr(H),[arr(heapIns(keys)),arr([...keys].sort((a,b)=>a-b)),arr(keys)]);if(!o)return null;const o2=o.length===4?o:null;return o2?{q:`Из массива ${arr(keys)} строят min-кучу алгоритмом heapify: просеивание вниз для индексов от ⌊n/2⌋ − 1 до 0. Каков результат?`,o:o2,e:`Просеиваются узлы с индексами 2, 1, 0: каждый меняется местами с меньшим из детей, пока он больше ребёнка. Итог: ${arr(H)}.`}:null}},
+{t:"Стеки и очереди",d:"h",f:r=>{const n=[ri(r,2,9),ri(r,2,9),ri(r,2,9),ri(r,2,9)];const ops=[pk(r,["+","−","*"]),pk(r,["+","−","*"]),pk(r,["+","−","*"])];if(!ops.includes("−"))return null;const ap=(x,o,y)=>o==="+"?x+y:o==="−"?x-y:x*y;const apS=(x,o,y)=>o==="−"?y-x:ap(x,o,y);let pf,val,wrong,inf;if(ri(r,0,1)===0){pf=`${n[0]} ${n[1]} ${ops[0]} ${n[2]} ${n[3]} ${ops[1]} ${ops[2]}`;val=ap(ap(n[0],ops[0],n[1]),ops[2],ap(n[2],ops[1],n[3]));wrong=apS(apS(n[0],ops[0],n[1]),ops[2],apS(n[2],ops[1],n[3]));inf=`(${n[0]} ${ops[0]} ${n[1]}) ${ops[2]} (${n[2]} ${ops[1]} ${n[3]})`}else{pf=`${n[0]} ${n[1]} ${ops[0]} ${n[2]} ${ops[1]} ${n[3]} ${ops[2]}`;val=ap(ap(ap(n[0],ops[0],n[1]),ops[1],n[2]),ops[2],n[3]);wrong=apS(apS(apS(n[0],ops[0],n[1]),ops[1],n[2]),ops[2],n[3]);inf=`((${n[0]} ${ops[0]} ${n[1]}) ${ops[1]} ${n[2]}) ${ops[2]} ${n[3]}`}return{q:`Вычислите постфиксное выражение: <code>${pf}</code>`,o:nOpts(val,[wrong,-val,val+n[3],val-1]),e:`В инфиксной записи: ${inf} = ${num(val)}. При «−» из стека сначала снимается правый операнд, затем левый; если их перепутать, получится ${num(wrong)}.`}}},
+{t:"Рекуррентные соотношения",d:"h",f:r=>{const [a,b,c]=pk(r,[[1,2,0],[2,2,1],[4,2,2],[8,2,3],[3,3,1],[9,3,2],[4,4,1],[16,4,2],[1,3,0]]);const k=ri(r,0,2);const P=(p,lg)=>{let s=p===0?"":p===1?"n":"n"+SUP[p];if(lg)s=s?s+" log n":"log n";return"Θ("+(s||"1")+")"};const fs=["1","n","n²"][k];const ans=c<k?P(k,0):c===k?P(k,1):P(c,0);return{q:`Найдите асимптотику решения: T(n) = ${a===1?"":a}T(n/${b}) + ${fs}`,o:sOpts(ans,[P(k,0),P(k,1),P(c,0),P(c,1),P(Math.max(c,k)+1,0)]),e:`Основная теорема: a = ${a}, b = ${b}, log_b a = ${c}, f(n) = Θ(${fs==="1"?"1":fs}). ${c<k?`f(n) растёт быстрее n^${c}, поэтому ответ определяет f(n): ${ans}.`:c===k?`Степени совпадают, добавляется множитель log n: ${ans}.`:`n^${c} растёт быстрее f(n), поэтому ответ ${ans}.`}`}}},
+{t:"Хеширование",d:"h",f:r=>{const m=pk(r,[7,11,13]);const s=ri(r,0,m-1);const cand=[s+m*ri(r,1,4),s+m*ri(r,5,8),(s+1)%m+m*ri(r,1,6),ri(r,10,99),s+m*ri(r,9,12)];const keys=[...new Set(cand)];if(keys.length<5)return null;const T=Array(m).fill(null),pos=[];for(const k of keys){let i=k%m;while(T[i]!==null)i=(i+1)%m;T[i]=k;pos.push(i)}const last=keys[keys.length-1],li=pos[pos.length-1];if(li===last%m)return null;return{q:`Хеш-таблица размера ${m}, h(k) = k mod ${m}, коллизии разрешаются линейным пробированием (шаг +1). В пустую таблицу по очереди вставили ключи ${keys.join(", ")}. В какую ячейку (индексация с 0) попадёт последний ключ?`,o:nOpts(li,[last%m,(li+1)%m,(li+m-1)%m,(last%m+1)%m],{min:0}),e:`${keys.map((k,i)=>`${k} mod ${m} = ${k%m} → ячейка ${pos[i]}`).join("; ")}. Занятые ячейки пропускаются по одной.`}}},
+graphGen("bfs"),graphGen("dfs"),
+{t:"Графы",d:"h",f:r=>{const L="ABCDE";const W=Array.from({length:5},()=>Array(5).fill(0));const edges=[];for(let i=0;i<5;i++)for(let j=i+1;j<5;j++)if(r()<(i===0&&j===4?0.7:0.55)){const w=ri(r,1,12);W[i][j]=W[j][i]=w;edges.push([i,j,w])}const paths=[];const go=(u,seen,len,p)=>{if(u===4){paths.push([len,p]);return}for(let v=0;v<5;v++)if(W[u][v]&&!seen.has(v)){seen.add(v);go(v,seen,len+W[u][v],[...p,v]);seen.delete(v)}};go(0,new Set([0]),0,[0]);if(paths.length<3)return null;paths.sort((a,b)=>a[0]-b[0]);const best=paths[0];if(paths[1][0]===best[0])return null;if(W[0][4]&&W[0][4]===best[0])return null;const lens=[...new Set(paths.map(p=>p[0]))];return{q:`Неориентированный взвешенный граф: ${edges.map(([i,j,w])=>`${L[i]}–${L[j]}: ${w}`).join(", ")}. Какова длина кратчайшего пути из A в E?`,o:nOpts(best[0],[W[0][4]||undefined,...lens.slice(1),best[0]+1].filter(x=>x!==undefined),{min:1}),e:`Кратчайший путь: ${best[1].map(i=>L[i]).join(" → ")} = ${best[1].slice(1).map((v,i)=>W[best[1][i]][v]).join(" + ")} = ${best[0]}.${W[0][4]?` Прямое ребро A–E весит ${W[0][4]}, это длиннее.`:""}`}}},
+{t:"Жадные алгоритмы и ДП",d:"h",f:r=>{const C=pk(r,[[1,3,4],[1,5,6,9],[1,4,5],[1,7,10],[1,6,9],[1,5,8]]);const S=ri(r,8,24);const dp=Array(S+1).fill(Infinity),from=Array(S+1).fill(0);dp[0]=0;for(let s=1;s<=S;s++)for(const c of C)if(c<=s&&dp[s-c]+1<dp[s]){dp[s]=dp[s-c]+1;from[s]=c}let g=0,x=S;for(const c of [...C].sort((a,b)=>b-a)){g+=Math.floor(x/c);x%=c}if(g===dp[S])return null;const combo=[];for(let s=S;s>0;s-=from[s])combo.push(from[s]);return{q:`Есть монеты номиналов {${C.join(", ")}}, каждого номинала сколько угодно. Какое наименьшее число монет нужно, чтобы набрать сумму ${S}?`,o:nOpts(dp[S],[g,dp[S]+1,g+1,dp[S]-1],{min:1}),e:`Оптимум: ${combo.join(" + ")} = ${S} (монет: ${dp[S]}). Жадный выбор (всегда самая крупная монета) даёт монет: ${g}, поэтому здесь нужно динамическое программирование.`}}},
+{t:"Динамическое программирование",d:"h",f:r=>{const mk=()=>range(1,6).map(()=>pk(r,["A","B","C","D"])).join("");const x=mk(),y=mk();const D=Array.from({length:7},()=>Array(7).fill(0));for(let i=1;i<=6;i++)for(let j=1;j<=6;j++)D[i][j]=x[i-1]===y[j-1]?D[i-1][j-1]+1:Math.max(D[i-1][j],D[i][j-1]);let i=6,j=6,s="";while(i&&j){if(x[i-1]===y[j-1]){s=x[i-1]+s;i--;j--}else if(D[i-1][j]>=D[i][j-1])i--;else j--}const L=D[6][6];if(L<2)return null;return{q:`Какова длина наибольшей общей подпоследовательности (LCS) строк <code>${x}</code> и <code>${y}</code>?`,o:nOpts(L,[L+1,L-1,L+2,L-2],{min:0}),e:`Одна из LCS — ${s} (длина ${L}). Подпоследовательность не обязана быть непрерывной. Таблица ДП 7 × 7 даёт ответ ${L}.`}}},
+{t:"Сортировки",d:"h",f:r=>{const a=shR(r,range(1,30)).slice(0,7);const per=a.map((v,i)=>a.slice(i+1).filter(w=>w<v).length);const c=per.reduce((s,v)=>s+v,0);return{q:`Сколько инверсий в массиве ${arr(a)}? Инверсия — пара индексов i < j, где a[i] > a[j]. Столько же обменов сделает пузырьковая сортировка.`,o:nOpts(c,[c+1,c-1,21-c,c+2],{min:0}),e:`Для каждого элемента считаем меньшие элементы правее него: ${per.join(" + ")} = ${c}.`}}}
+];
+
+/* ---------- базы данных ---------- */
+const DEPTS=["IT","HR","Sales","Ops"];
+function empRows(r,o={}){const n=ri(r,6,8),rows=[];for(let i=1;i<=n;i++){const d=o.nullDept&&r()<0.18?null:pk(r,DEPTS);const s=r()<0.25?null:ri(r,10,40)*10;rows.push([i,d,s])}return rows}
+const empHtml=rows=>"Таблица <code>employees</code>:"+tbl(["id","dept","salary"],rows);
+function joinData(r){const names=shR(r,["Алия","Бекзат","Данияр","Жанна","Ерлан","Мадина","Нурлан"]);const nA=ri(r,4,5);const A=range(1,nA).map(i=>[i,names[i-1]]);const B=range(1,ri(r,5,7)).map(i=>[100+i,ri(r,1,nA+2),ri(r,1,9)*1000]);const m=id=>B.filter(b=>b[1]===id).length;const inner=A.reduce((s,a)=>s+m(a[0]),0);const unA=A.filter(a=>!m(a[0])).length;const unB=B.filter(b=>!A.some(a=>a[0]===b[1])).length;if(!unA||!unB||!A.some(a=>m(a[0])>=2))return null;return{A,B,m,inner,left:inner+unA,right:inner+unB,full:inner+unA+unB,unA,unB}}
+function joinGen(type){return{t:"SQL: JOIN",d:"h",f:r=>{const J=joinData(r);if(!J)return null;const ans={INNER:J.inner,LEFT:J.left,RIGHT:J.right,"FULL OUTER":J.full}[type];const per=J.A.map(a=>`${a[1]} — ${J.m(a[0])}`).join(", ");const why={INNER:`INNER JOIN оставляет только пары: ${per}, всего ${J.inner}.`,LEFT:`Пары: ${per}, всего ${J.inner}. LEFT JOIN добавляет по строке с NULL для каждого клиента без заказов (их ${J.unA}): ${J.inner} + ${J.unA} = ${J.left}.`,RIGHT:`Пар ${J.inner}. RIGHT JOIN добавляет по строке для каждого заказа с несуществующим customer_id (их ${J.unB}): ${J.inner} + ${J.unB} = ${J.right}.`,"FULL OUTER":`Пар ${J.inner}, клиентов без заказов ${J.unA}, заказов без клиента ${J.unB}: ${J.inner} + ${J.unA} + ${J.unB} = ${J.full}.`}[type];return{q:`Таблица <code>customers</code>:${tbl(["id","name"],J.A)}Таблица <code>orders</code>:${tbl(["order_id","customer_id","amount"],J.B)}Сколько строк вернёт запрос?<pre>SELECT * FROM customers c\n${type} JOIN orders o ON o.customer_id = c.id;</pre>`,o:nOpts(ans,[J.inner,J.left,J.right,J.full,J.A.length,J.B.length,J.A.length*J.B.length],{min:0}),e:why}}}}
+
+const G_DB=[
+{t:"SQL: GROUP BY и HAVING",d:"h",f:r=>{const rows=empRows(r,{nullDept:true});const g={};rows.forEach(([,d,s])=>{const k=d===null?"NULL":d;g[k]=g[k]||{all:0,nn:0};g[k].all++;if(s!==null)g[k].nn++});const K=Object.keys(g);const c=K.filter(k=>g[k].nn>=2).length,cAll=K.filter(k=>g[k].all>=2).length;return{q:`${empHtml(rows)}Сколько строк вернёт запрос?<pre>SELECT dept, COUNT(salary)\nFROM employees\nGROUP BY dept\nHAVING COUNT(salary) >= 2;</pre>`,o:nOpts(c,[cAll,K.length,c+1,c-1],{min:0}),e:`Группы: ${K.map(k=>`${k} — ${g[k].nn} непустых salary из ${g[k].all}`).join("; ")}. COUNT(salary) не считает NULL, а строки с dept = NULL образуют отдельную группу. Условию удовлетворяют ${c}.`}}},
+{t:"SQL: агрегаты и NULL",d:"h",f:r=>{const rows=empRows(r);const v=rows.map(x=>x[2]).filter(x=>x!==null);if(v.length===rows.length||v.length<3)return null;const sum=v.reduce((a,b)=>a+b,0),avg=sum/v.length;return{q:`${empHtml(rows)}Что вернёт запрос <code>SELECT AVG(salary) FROM employees</code>?`,o:nOpts(avg,[sum/rows.length,sum/(v.length-1),avg+10,avg-10],{min:0}),e:`AVG пропускает NULL: сумма ${sum} делится на ${v.length} непустых значений, а не на ${rows.length} строк. ${sum} / ${v.length} = ${num(avg)}.`}}},
+{t:"SQL: агрегаты и NULL",d:"h",f:r=>{const rows=empRows(r,{nullDept:true});if(!rows.some(x=>x[1]===null))rows[ri(r,0,rows.length-1)][1]=null;const d=rows.map(x=>x[1]);const nn=d.filter(x=>x!==null);const dist=new Set(nn).size;return{q:`${empHtml(rows)}Что вернёт запрос <code>SELECT COUNT(DISTINCT dept) FROM employees</code>?`,o:nOpts(dist,[new Set(d).size,nn.length,rows.length,dist-1],{min:0}),e:`DISTINCT оставляет уникальные значения (${[...new Set(nn)].join(", ")}), а COUNT не считает NULL. Ответ: ${dist}.`}}},
+{t:"SQL: агрегаты и NULL",d:"h",f:r=>{const rows=empRows(r);const nn=rows.filter(x=>x[2]!==null).length;if(nn===rows.length)return null;const X=ri(r,15,30)*10;return{q:`${empHtml(rows)}Что вернёт запрос?<pre>SELECT COUNT(*) FROM employees\nWHERE salary > ${X} OR salary <= ${X};</pre>`,o:nOpts(nn,[rows.length,rows.length-nn,nn-1],{min:0}),e:`Для salary = NULL оба сравнения дают UNKNOWN, и UNKNOWN OR UNKNOWN = UNKNOWN, поэтому такие строки не проходят WHERE. Остаются строки с непустой зарплатой: ${nn}.`}}},
+{t:"SQL: агрегаты и NULL",d:"h",f:r=>{const rows=empRows(r,{nullDept:true});if(!rows.some(x=>x[1]===null))rows[ri(r,0,rows.length-1)][1]=null;const it=rows.filter(x=>x[1]==="IT").length;if(!it)return null;const c=rows.filter(x=>x[1]!==null&&x[1]!=="IT").length;return{q:`${empHtml(rows)}Что вернёт запрос <code>SELECT COUNT(*) FROM employees WHERE dept &lt;&gt; 'IT'</code>?`,o:nOpts(c,[rows.length-it,rows.length,it,c-1],{min:0}),e:`Строки с dept = NULL не проходят условие: NULL <> 'IT' даёт UNKNOWN. Подходят только отделы, отличные от IT: ${c}.`}}},
+{t:"SQL: GROUP BY и HAVING",d:"h",f:r=>{const rows=empRows(r);const S={},Cn={};rows.forEach(([,d,s])=>{Cn[d]=(Cn[d]||0)+1;if(s!==null)S[d]=(S[d]||0)+s});const present=Object.keys(Cn);if(present.some(d=>S[d]===undefined)||present.length<3)return null;const sorted=present.slice().sort((a,b)=>S[b]-S[a]);if(S[sorted[0]]===S[sorted[1]])return null;return{q:`${empHtml(rows)}Какой отдел вернёт запрос?<pre>SELECT dept FROM employees\nGROUP BY dept\nORDER BY SUM(salary) DESC\nLIMIT 1;</pre>`,o:sOpts(sorted[0],DEPTS.filter(d=>d!==sorted[0])),e:`Суммы зарплат (NULL не учитывается): ${present.map(d=>`${d} — ${S[d]}`).join(", ")}. Наибольшая у ${sorted[0]}.`}}},
+{t:"SQL: оконные функции",d:"h",f:r=>{const vals=shR(r,[98,95,92,90,88,85,82,80,77,75,70]).slice(0,4).sort((a,b)=>b-a);const pat=pk(r,[[1,2,1,2],[2,1,2,1],[1,3,1,1],[2,2,1,1],[1,2,2,1],[2,1,1,2]]);const sc=[];vals.forEach((v,i)=>{for(let k=0;k<pat[i];k++)sc.push(v)});const names=shR(r,["Алия","Бекзат","Данияр","Жанна","Ерлан","Мадина","Нурлан","Сауле"]).slice(0,6);let ti=-1;for(let i=1;i<4;i++){if(pat.slice(0,i).some(c=>c>1)){ti=i;break}}if(ti<0)return null;const v=vals[ti];const rank=1+sc.filter(x=>x>v).length,dense=ti+1;const rows=shR(r,names.map((n,i)=>[n,sc[i]]));const who=rows.find(x=>x[1]===v)[0];const useDense=r()<0.5;const ans=useDense?dense:rank;return{q:`Таблица <code>results</code>:${tbl(["name","score"],rows)}Какое значение вернёт <code>${useDense?"DENSE_RANK()":"RANK()"} OVER (ORDER BY score DESC)</code> для строки ${who}?`,o:nOpts(ans,[useDense?rank:dense,rank+pat[ti]-1,ans-1,ans+1],{min:1}),e:`По убыванию: ${sc.join(", ")}. RANK даёт равным одинаковый ранг и пропускает следующие номера: ${who} (${v}) получает ${rank}. DENSE_RANK не пропускает номера: ${dense}.`}}},
+joinGen("INNER"),joinGen("LEFT"),joinGen("RIGHT"),joinGen("FULL OUTER"),
+{t:"SQL: JOIN",d:"m",f:r=>{const a=ri(r,3,7),b=ri(r,3,7);return{q:`В таблице <code>colors</code> ${a} строк, в таблице <code>sizes</code> — ${b}. Сколько строк вернёт <code>SELECT * FROM colors CROSS JOIN sizes</code>?`,o:nOpts(a*b,[a+b,Math.max(a,b),a*b-1,a*b+a],{min:1}),e:`CROSS JOIN — декартово произведение: каждая строка первой таблицы соединяется с каждой строкой второй, ${a} · ${b} = ${a*b}.`}}}
+];
+
+/* =====================================================================
+   СБОРКА БАЗЫ
+   ===================================================================== */
+const SUBJECTS = {
+  en:{name:"Английский язык",about:"Grammar, vocabulary, reading comprehension",hand:EN,gens:[],seed:11},
+  an:{name:"Аналитическое мышление",about:"Логика, анализ аргументов, числовые и текстовые задачи, данные",hand:AN,gens:G_AN,seed:23},
+  algo:{name:"Алгоритмы и структуры данных",about:"Сложность, сортировки, деревья, кучи, хеширование, графы, ДП",hand:ALGO,gens:G_ALGO,seed:37},
+  db:{name:"Базы данных",about:"SQL, NULL, JOIN, нормализация, транзакции, индексы",hand:DB,gens:G_DB,seed:53}
+};
+const ORDER=["en","an","algo","db"];
+const TEST_N=20, MIX_N=10, PER_GEN=8;
+const POOL={}, QBY={};
+for(const s of ORDER){
+  const S=SUBJECTS[s], pool=[];
+  S.hand.forEach((h,i)=>pool.push({id:`${s}h${i}`,s,d:h[0],t:h[1],q:h[2],o:h[3],e:h[4],ctx:h[5]||null,fam:h[5]?`${s}p${h[5]}`:`${s}h${i}`}));
+  S.gens.forEach((g,gi)=>{const r=rng(S.seed*1000+gi*7+1);const seen=new Set();let k=0,tries=0;while(k<PER_GEN&&tries<500){tries++;const x=g.f(r);if(!x||!x.o||x.o.length!==4||new Set(x.o).size!==4)continue;const key=x.q+"|"+x.o[0];if(seen.has(key))continue;seen.add(key);pool.push({id:`${s}g${gi}_${k}`,s,d:g.d,t:g.t,q:x.q,o:x.o,e:x.e,ctx:null,fam:`${s}g${gi}`});k++}});
+  POOL[s]=pool; pool.forEach(q=>QBY[q.id]=q);
+}
+
+/*UI*/
+/* =====================================================================
+   ИНТЕРФЕЙС
+   ===================================================================== */
+const $=s=>document.querySelector(s);
+const app=$("#app");
+const LS={get(k,d){try{const v=localStorage.getItem("kvalimetr:"+k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem("kvalimetr:"+k,JSON.stringify(v))}catch(e){}},del(k){try{localStorage.removeItem("kvalimetr:"+k)}catch(e){}}};
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const LET="ABCD";
+const kindName=k=>k==="mix"?"Смешанный тест":SUBJECTS[k].name;
+
+/* ---------- формирование теста ---------- */
+function pick(s,n){
+  const pool=POOL[s], nh=Math.round(n*0.75), nm=n-nh;
+  let seen=new Set(LS.get("seen:"+s,[]));
+  const fams=new Set(), chosen=[];
+  const take=(d,cnt)=>{const cand=pool.filter(q=>q.d===d);const ordered=[...shuffle(cand.filter(q=>!seen.has(q.id))),...shuffle(cand.filter(q=>seen.has(q.id)))];const out=[];
+    for(const q of ordered){if(out.length===cnt)break;if(fams.has(q.fam))continue;fams.add(q.fam);out.push(q.id)}
+    for(const q of ordered){if(out.length===cnt)break;if(!out.includes(q.id))out.push(q.id)}
+    return out};
+  chosen.push(...take("h",nh),...take("m",nm));
+  chosen.forEach(id=>seen.add(id));
+  if(seen.size>pool.length*0.8) seen=new Set(chosen);
+  LS.set("seen:"+s,[...seen]);
+  return chosen;
+}
+const mkPerm=ids=>Object.fromEntries(ids.map(id=>[id,shuffle([0,1,2,3])]));
+function newTest(kind){
+  const ids = kind==="mix" ? ORDER.flatMap(s=>pick(s,MIX_N)) : pick(kind,TEST_N);
+  const order = shuffle(ids);
+  return {kind,ids:order,perm:mkPerm(order),ans:{},cur:0,attempt:1,prev:null};
+}
+function retake(t,res){const ids=shuffle(t.ids);return {kind:t.kind,ids,perm:mkPerm(ids),ans:{},cur:0,attempt:t.attempt+1,prev:{correct:res.correct,total:res.total}}}
+
+/* ---------- маршруты ---------- */
+let state={};
+function go(view,data){state={view,...data};$("#modal-root").innerHTML="";({home:renderHome,test:renderTest,results:renderResults})[view]();window.scrollTo({top:0})}
+$("#brand").onclick=()=>{if(state.view==="test"){confirmBox("Прервать тест?","Ответы сохранятся: тест можно будет продолжить с главной страницы.","Выйти",()=>go("home"))}else go("home")};
+function confirmBox(title,text,ok,onOk,danger){const root=$("#modal-root");root.innerHTML=`<div class="modal" role="dialog" aria-modal="true" aria-labelledby="mt"><div class="sheet"><h2 id="mt">${title}</h2><p class="muted">${text}</p><div class="row" style="justify-content:flex-end"><button class="btn ghost" id="m-no">Отмена</button><button class="btn ${danger?"danger":"primary"}" id="m-ok">${ok}</button></div></div></div>`;$("#m-no").onclick=()=>root.innerHTML="";$("#m-ok").onclick=()=>{root.innerHTML="";onOk()};$("#m-ok").focus()}
+
+/* ---------- главная ---------- */
+function renderHome(){
+  $("#ctx").textContent="";
+  const saved=LS.get("test",null), stats=LS.get("stats",{});
+  const validSaved=saved&&saved.ids.every(id=>QBY[id]);
+  const card=(k)=>{const st=stats[k];const total=k==="mix"?ORDER.reduce((a,s)=>a+POOL[s].length,0):POOL[k].length;const n=k==="mix"?MIX_N*ORDER.length:TEST_N;
+    const meta=`<div class="meta"><span><b>${n}</b> вопросов в тесте</span><span><b>${total}</b> в базе</span>${st?`<span>последний <b>${st.last}%</b></span><span>лучший <b>${st.best}%</b></span>`:""}</div>`;
+    if(k==="mix")return `<div class="sheet subj mix"><div class="top"><h2>Смешанный тест</h2><p class="muted small">По ${MIX_N} вопросов из каждого предмета, итог и разбивка по предметам.</p>${meta}</div><button class="btn" data-start="mix">Начать</button></div>`;
+    return `<div class="sheet subj"><div class="top"><h2>${SUBJECTS[k].name}</h2><p class="muted small">${SUBJECTS[k].about}</p>${meta}</div><button class="btn primary" data-start="${k}">Начать тест</button></div>`};
+  app.innerHTML=`<section class="view">
+    ${validSaved?`<div class="sheet resume row" style="justify-content:space-between"><div><div class="eyebrow">Незавершённый тест</div><p><b>${kindName(saved.kind)}</b> · отвечено ${Object.keys(saved.ans).length} из ${saved.ids.length}</p></div><div class="row"><button class="btn ghost" id="drop">Удалить</button><button class="btn primary" id="resume">Продолжить</button></div></div>`:""}
+    <div class="intro"><h1>Подготовка к экзаменам на сложных вопросах</h1><p class="muted">Каждый тест собирается случайно из базы предмета: 75% сложных и 25% средних вопросов. Сначала даются вопросы, которых вы ещё не видели. После теста — разбор ошибок и повтор того же набора.</p></div>
+    <div class="subjects">${ORDER.map(card).join("")}${card("mix")}</div>
+  </section>`;
+  app.querySelectorAll("[data-start]").forEach(b=>b.onclick=()=>{const start=()=>{const t=newTest(b.dataset.start);LS.set("test",t);go("test",{t})};if(validSaved)confirmBox("Начать новый тест?","Незавершённый тест будет удалён.","Начать",start,true);else start()});
+  if(validSaved){$("#resume").onclick=()=>go("test",{t:saved});$("#drop").onclick=()=>confirmBox("Удалить незавершённый тест?","Ответы этой попытки пропадут.","Удалить",()=>{LS.del("test");renderHome()},true)}
+  else if(saved) LS.del("test");
+}
+
+/* ---------- прохождение ---------- */
+function renderTest(){
+  const t=state.t, save=()=>LS.set("test",t);
+  $("#ctx").textContent=kindName(t.kind)+(t.attempt>1?` · попытка ${t.attempt}`:"");
+  const draw=()=>{
+    const id=t.ids[t.cur], q=QBY[id], P=q.ctx?PASSAGES[q.ctx]:null;
+    const done=Object.keys(t.ans).length, n=t.ids.length;
+    const opts=t.perm[id].map((oi,k)=>`<button class="opt" data-oi="${oi}" aria-pressed="${t.ans[id]===oi}"><span class="mk">${LET[k]}</span><span>${esc(q.o[oi])}</span></button>`).join("");
+    app.innerHTML=`<section class="view">
+      <div class="test-head"><div class="progress"><div class="row small" style="justify-content:space-between"><span class="mono">Вопрос ${t.cur+1} из ${n}</span><span class="muted">отвечено ${done}</span></div><div class="track"><i style="width:${done/n*100}%"></i></div></div><button class="btn danger" id="finish">Завершить</button></div>
+      <div class="test-grid">
+        <div class="qwrap ${P?"split":""}">
+          ${P?`<aside class="passage"><span class="eyebrow">Reading · ${P.title}</span>${P.text.split("\n\n").map(p=>`<p>${esc(p)}</p>`).join("")}</aside>`:""}
+          <div class="sheet qcard">
+            <div class="qhead"><span class="qnum">№${t.cur+1}</span><span class="pill">${t.kind==="mix"?SUBJECTS[q.s].name+" · ":""}${esc(q.t)}</span></div>
+            <div class="qtext">${q.q}</div>
+            <div class="opts" role="group" aria-label="Варианты ответа">${opts}</div>
+            <div class="qnav"><button class="btn" id="prev" ${t.cur===0?"disabled":""}>← Назад</button><button class="btn primary" id="next">${t.cur===n-1?"Завершить тест":"Далее →"}</button></div>
+          </div>
+        </div>
+        <aside class="sheet palette"><b>Бланк ответов</b><div class="pal-grid">${t.ids.map((x,i)=>`<button class="cell ${t.ans[x]!==undefined?"ans":""} ${i===t.cur?"cur":""}" data-i="${i}" aria-label="Вопрос ${i+1}">${i+1}</button>`).join("")}</div><span class="kbd">Клавиши: 1–4 — ответ, ← → — переход</span></aside>
+      </div></section>`;
+    app.querySelectorAll(".opt").forEach(el=>el.onclick=()=>{const oi=+el.dataset.oi;if(t.ans[id]===oi)delete t.ans[id];else t.ans[id]=oi;save();draw()});
+    app.querySelectorAll(".cell").forEach(el=>el.onclick=()=>{t.cur=+el.dataset.i;save();draw()});
+    $("#prev").onclick=()=>{t.cur--;save();draw()};
+    $("#next").onclick=()=>{if(t.cur<n-1){t.cur++;save();draw()}else askFinish()};
+    $("#finish").onclick=askFinish;
+  };
+  const askFinish=()=>{const left=t.ids.length-Object.keys(t.ans).length;confirmBox("Завершить тест?",left?`Без ответа осталось ${left}. Такие вопросы засчитываются как неправильные.`:"Все вопросы отвечены. После завершения ответы изменить нельзя.","Завершить",finish,left>0)};
+  const finish=()=>{
+    const per={};let correct=0;
+    t.ids.forEach(id=>{const q=QBY[id];const ok=t.ans[id]===0;if(ok)correct++;per[q.s]=per[q.s]||{c:0,n:0};per[q.s].n++;if(ok)per[q.s].c++});
+    const res={kind:t.kind,total:t.ids.length,correct,unanswered:t.ids.filter(id=>t.ans[id]===undefined).length,per,test:t};
+    res.pct=Math.round(correct/res.total*100);
+    const stats=LS.get("stats",{});const st=stats[t.kind]||{best:0,n:0};stats[t.kind]={last:res.pct,best:Math.max(st.best,res.pct),n:st.n+1};LS.set("stats",stats);
+    LS.del("test");LS.set("last",res);go("results",{res});
+  };
+  document.onkeydown=e=>{if(state.view!=="test"||$("#modal-root").innerHTML)return;const n=t.ids.length,id=t.ids[t.cur];
+    if(e.key==="ArrowRight"&&t.cur<n-1){t.cur++;save();draw()}else if(e.key==="ArrowLeft"&&t.cur>0){t.cur--;save();draw()}
+    else if(/^[1-4]$/.test(e.key)){t.ans[id]=t.perm[id][+e.key-1];save();draw()}};
+  draw();
+}
+
+/* ---------- результаты ---------- */
+const grade=p=>p>=85?["Отлично","var(--ok)"]:p>=70?["Хорошо","var(--accent)"]:p>=50?["Удовлетворительно","var(--warn)"]:["Нужно подтянуть","var(--bad)"];
+function renderResults(){
+  const res=state.res||LS.get("last",null);
+  if(!res||!res.test.ids.every(id=>QBY[id])){go("home");return}
+  $("#ctx").textContent=kindName(res.kind);
+  const t=res.test, wrong=t.ids.filter(id=>t.ans[id]!==0), [gl,gc]=grade(res.pct);
+  const prev=t.prev?`<p class="small muted">В прошлой попытке этого набора: ${t.prev.correct} из ${t.prev.total}. ${res.correct>t.prev.correct?`Стало лучше на ${res.correct-t.prev.correct}.`:res.correct<t.prev.correct?`Стало хуже на ${t.prev.correct-res.correct}.`:"Результат тот же."}</p>`:"";
+  const breakdown=res.kind==="mix"?`<div class="sheet breakdown"><h2>По предметам</h2>${ORDER.map(s=>{const p=res.per[s];if(!p)return"";const pc=Math.round(p.c/p.n*100);return `<div class="brow"><span>${SUBJECTS[s].name}</span><div class="bar"><i style="width:${pc}%"></i></div><span class="mono" style="text-align:right">${p.c}/${p.n}</span></div>`}).join("")}</div>`:"";
+  const item=(id,i)=>{const q=QBY[id],a=t.ans[id],P=q.ctx?PASSAGES[q.ctx]:null;return `<article class="sheet wi">
+      <div class="qhead"><span class="qnum">№${t.ids.indexOf(id)+1}</span><span class="pill">${res.kind==="mix"?SUBJECTS[q.s].name+" · ":""}${esc(q.t)}</span></div>
+      ${P?`<details><summary>Текст «${P.title}»</summary><div class="passage">${P.text.split("\n\n").map(p=>`<p>${esc(p)}</p>`).join("")}</div></details>`:""}
+      <div class="qtext">${q.q}</div>
+      <div class="ans-line bad"><span class="lbl">Ваш ответ</span><span>${a===undefined?"<i>нет ответа</i>":esc(q.o[a])}</span></div>
+      <div class="ans-line ok"><span class="lbl">Правильный ответ</span><span>${esc(q.o[0])}</span></div>
+      <p class="why">${q.e}</p></article>`};
+  app.innerHTML=`<section class="view">
+    <div class="sheet score">
+      <div style="display:grid;gap:6px"><span class="eyebrow">${kindName(res.kind)}${t.attempt>1?` · попытка ${t.attempt}`:""}</span><div class="big">${res.pct}%</div><span class="grade" style="color:${gc}">${gl}</span></div>
+      <div style="display:grid;gap:12px">
+        <div class="figures"><div><span class="eyebrow">Итог</span><span class="v">${res.correct}/${res.total}</span></div><div><span class="eyebrow">Правильно</span><span class="v ok">${res.correct}</span></div><div><span class="eyebrow">Неправильно</span><span class="v bad">${res.total-res.correct}</span></div></div>
+        ${res.unanswered?`<p class="small muted">Из неправильных без ответа: ${res.unanswered}.</p>`:""}${prev}
+        <div class="row"><button class="btn primary" id="again">Пройти этот набор снова</button><button class="btn" id="fresh">Новый тест</button><button class="btn ghost" id="home">К предметам</button></div>
+        <p class="small muted">«Снова» — те же вопросы в новом порядке, с перемешанными вариантами. «Новый тест» соберёт другой набор из базы.</p>
+      </div>
+    </div>
+    ${breakdown}
+    <div style="display:grid;gap:12px"><h2>${wrong.length?`Ошибки (${wrong.length})`:"Ошибок нет"}</h2>
+      ${wrong.length?`<div class="wrong-list">${wrong.map(item).join("")}</div>`:`<div class="empty">Все ответы верные. Попробуйте новый тест: база подберёт вопросы, которых вы ещё не видели.</div>`}</div>
+  </section>`;
+  $("#again").onclick=()=>{const nt=retake(t,res);LS.set("test",nt);go("test",{t:nt})};
+  $("#fresh").onclick=()=>{const nt=newTest(res.kind);LS.set("test",nt);go("test",{t:nt})};
+  $("#home").onclick=()=>go("home");
+}
+
+go("home");
+</script>
