@@ -1,5 +1,10 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Квалиметр — тренажёр экзаменов: случайные тесты из больших баз сложных вопросов, разбор ошибок и повторное прохождение.">
 <title>Квалиметр</title>
-<meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
 <style>
@@ -146,7 +151,8 @@ details .passage{margin-top:8px;max-height:none}
 }
 @media (prefers-reduced-motion:no-preference){.opt,.btn,.cell{transition:border-color .12s,background .12s}}
 </style>
-
+</head>
+<body>
 <header class="band"><div class="wrap">
   <button class="brand" id="brand" aria-label="Квалиметр — на главную"><svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><rect x="1" y="1" width="20" height="20" rx="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M6 15l3-4 3 2 4-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Квалиметр</button>
   <span class="ctx" id="ctx"></span>
@@ -695,3 +701,5 @@ function renderResults(){
 
 go("home");
 </script>
+</body>
+</html>
